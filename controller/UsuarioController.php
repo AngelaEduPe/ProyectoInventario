@@ -10,17 +10,12 @@ class UsuarioController {
             session_start();
         }
 
-        // === BLOQUE DE SEGURIDAD POR ROL (CORREGIDO) ===
-        // 1. Obtenemos el rol. Si no existe, es una cadena vacía.
         $rolUsuario = $_SESSION['nombreRol'] ?? '';
-        
-        // 2. Verificamos la seguridad: Bloqueamos si el usuario no está logueado 
-        // (no existe $_SESSION['usuario']) O si el rol NO es Administrador.
+
         if (!isset($_SESSION['usuario']) || $rolUsuario !== 'Administrador') {
             header("Location: index.php?c=dashboard&a=index");
             exit();
         }
-        // ===============================================
     }
 
     public function listar() {
