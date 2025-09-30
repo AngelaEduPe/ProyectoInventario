@@ -1,93 +1,112 @@
-<?php include(__DIR__ . "/../BarraMenu.php"); ?>
-
+<?php
+include(__DIR__ . '/../BarraMenu.php');
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Agregar Stock</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: url("view/imagenes/Fondo2.png") no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+        }
+
         .content {
             margin-left: 270px;
-            padding: 20px;
+            margin-top: 10px;
+            max-width: 1230px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
         }
-        .card-header {
-            background-color: #7245da;
-            color: white;
-            padding: 1.5rem;
-            border-bottom: 3px solid #5a35b0;
-        }
-        .card-title {
-            font-size: 2rem;
+
+        h1 {
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            color: #6d28d9;
         }
-        .card-subtitle {
-            font-size: 1rem;
-            font-style: italic;
-            opacity: 0.8;
+
+        .btn-lila {
+            background-color: #8b5cf6;
+            border: none;
+            color: #fff;
+            transition: 0.3s;
         }
+        .btn-lila:hover {
+            background-color: #7c3aed;
+            transform: scale(1.05);
+        }
+
         .list-group-item:hover {
             cursor: pointer;
-            background-color: #f8f9fa;
+            background-color: rgba(139, 92, 246, 0.1);
         }
+
         .selected-product-info {
-            background-color: #e9ecef;
-            border: 1px solid #ced4da;
-            border-radius: .25rem;
-            padding: .5rem .75rem;
+            background-color: rgba(139, 92, 246, 0.1);
+            border: 1px solid #8b5cf6;
+            border-radius: .5rem;
+            padding: .75rem;
             margin-top: .5rem;
         }
     </style>
 </head>
 <body>
     <div class="content">
-        <div class="card shadow-lg mb-4 rounded-3">
-            <div class="card-header rounded-top">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1 class="card-title">Agregar Stock</h1>
-                        <p class="card-subtitle">Completa el formulario para ingresar nuevas existencias.</p>
-                    </div>
-                </div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>Agregar Stock</h1>
+                <p class="text-muted">Completa el formulario para ingresar nuevas existencias.</p>
             </div>
         </div>
 
-        <div class="card shadow-lg mb-4 rounded-3 p-4">
+        <div class="p-4 rounded-3 bg-white shadow">
             <form action="index.php?c=stock&a=insertar" method="POST">
-                <?php
-                if (isset($_GET['msg'])) {
-                    if ($_GET['msg'] === 'success') {
-                        echo '<div class="alert alert-success">¡Stock agregado correctamente!</div>';
-                    } else if ($_GET['msg'] === 'error') {
-                        echo '<div class="alert alert-danger">Hubo un error al agregar el stock.</div>';
-                    }
+            <?php
+            if (isset($_GET['msg'])) {
+                if ($_GET['msg'] === 'success') {
+                    echo '<div class="alert alert-success">¡Stock agregado correctamente!</div>';
+                } else if ($_GET['msg'] === 'error') {
+                    echo '<div class="alert alert-danger">Hubo un error al agregar el stock.</div>';
                 }
-                ?>
+            }
+            ?>
 
-                <div class="mb-3">
-                    <label for="producto-input" class="form-label fw-bold">Buscar Producto:</label>
-                    <input type="text" class="form-control" id="producto-input" placeholder="Escribe el nombre o SKU del producto" autocomplete="off">
-                    <input type="hidden" name="idProducto" id="idProducto" required>
-                    <div id="productos-lista" class="list-group mt-2" style="max-height: 200px; overflow-y: auto;"></div>
-                    <div id="selected-product" class="selected-product-info mt-2" style="display: none;"></div>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="cantidad" class="form-label fw-bold">Cantidad:</label>
-                    <input type="number" class="form-control" name="cantidad" id="cantidad" required min="1">
-                </div>
-                
-                <div class="mb-3">
-                    <label for="fechaVencimiento" class="form-label fw-bold">Fecha de Vencimiento (opcional):</label>
-                    <input type="date" class="form-control" name="fechaVencimiento" id="fechaVencimiento">
-                </div>
-                
-                <button type="submit" class="btn btn-primary btn-lg w-100">
+            <div class="mb-3">
+                <label for="producto-input" class="form-label fw-bold">Buscar Producto:</label>
+                <input type="text" class="form-control" id="producto-input" placeholder="Escribe el nombre o SKU del producto" autocomplete="off">
+                <input type="hidden" name="idProducto" id="idProducto" required>
+                <div id="productos-lista" class="list-group mt-2" style="max-height: 200px; overflow-y: auto;"></div>
+                <div id="selected-product" class="selected-product-info mt-2" style="display: none;"></div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="cantidad" class="form-label fw-bold">Cantidad:</label>
+                <input type="number" class="form-control" name="cantidad" id="cantidad" required min="1">
+            </div>
+            
+            <div class="mb-3">
+                <label for="fechaVencimiento" class="form-label fw-bold">Fecha de Vencimiento (opcional):</label>
+                <input type="date" class="form-control" name="fechaVencimiento" id="fechaVencimiento">
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-lila btn-lg w-100">
                     <i class="bi bi-plus-circle me-2"></i> Agregar Stock
                 </button>
-            </form>
+
+                <a href="index.php?c=reporte&a=stock" class="btn btn-secondary btn-lg w-100">
+                    <i class="bi bi-x-circle me-2"></i> Cancelar
+                </a>
+            </div>
+        </form>
+
         </div>
     </div>
 

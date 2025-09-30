@@ -1,20 +1,63 @@
-<?php include(__DIR__ . "/../BarraMenu.php"); ?>
-
+<?php
+include(__DIR__ . '/../BarraMenu.php');
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Reporte de Stock por Fecha Vencimiento</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: url("view/imagenes/Fondo2.png") no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+        }
+
         .content {
             margin-left: 270px;
-            padding: 20px;
+            margin-top: 10px;
+            max-width: 1230px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
         }
+
+        h1 {
+            font-weight: 600;
+            color: #6d28d9;
+        }
+        p {
+            color: #6b7280;
+        }
+
+        .btn-lila {
+            background-color: #8b5cf6;
+            border: none;
+            color: #fff;
+            transition: 0.3s;
+        }
+        .btn-lila:hover {
+            background-color: #7c3aed;
+            transform: scale(1.05);
+        }
+
+        .table thead {
+            background: #6d28d9 !important;
+            color: #fff;
+        }
+        .table tbody tr:hover {
+            background-color: rgba(139, 92, 246, 0.1);
+        }
+
         .table-danger-light {
-            background-color: #f8d7da !important;
+            background-color: rgba(248, 215, 218, 0.6) !important;
         }
+
         .progress-container {
             width: 150px;
             margin-bottom: 0;
@@ -22,38 +65,18 @@
         .progress-bar {
             transition: width 0.6s ease;
         }
-        .card-header {
-            background-color: #7245da;
-            color: white;
-            padding: 1.5rem;
-            border-bottom: 3px solid #5a35b0;
-        }
-        .card-title {
-            font-size: 2rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        .card-subtitle {
-            font-size: 1rem;
-            font-style: italic;
-            opacity: 0.8;
-        }
     </style>
 </head>
 <body>
     <div class="content">
-        <div class="card shadow-lg mb-4 rounded-3">
-            <div class="card-header rounded-top">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1 class="card-title">Reporte de Stock por Fecha Vencimiento</h1>
-                        <p class="card-subtitle">Estado actual de tu inventario y alertas de existencias.</p>
-                    </div>
-                    <a href="index.php?c=stock&a=form" class="btn btn-light btn-lg">
-                        <i class="bi bi-plus-circle me-2"></i> Agregar Stock
-                    </a>
-                </div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>Reporte de Stock por Fecha Vencimiento</h1>
+                <p>Estado actual de tu inventario y alertas de existencias.</p>
             </div>
+            <a href="index.php?c=stock&a=form" class="btn btn-lila btn-lg">
+                <i class="bi bi-plus-circle me-2"></i> Agregar Stock
+            </a>
         </div>
 
         <?php
@@ -81,7 +104,7 @@
 
         <div class="table-responsive rounded-3 shadow-sm">
             <table class="table table-hover table-striped table-bordered align-middle">
-                <thead class="bg-primary text-white">
+                <thead>
                     <tr>
                         <th scope="col">Producto</th>
                         <th scope="col">Categoría</th>
