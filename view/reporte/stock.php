@@ -74,9 +74,12 @@ include(__DIR__ . '/../BarraMenu.php');
                 <h1>Reporte de Stock por Fecha Vencimiento</h1>
                 <p>Estado actual de tu inventario y alertas de existencias.</p>
             </div>
-            <a href="index.php?c=stock&a=form" class="btn btn-lila btn-lg">
-                <i class="bi bi-plus-circle me-2"></i> Agregar Stock
-            </a>
+            
+            <?php if ($rolUsuario === 'Administrador'): ?>
+                <a href="index.php?c=stock&a=form" class="btn btn-lila btn-lg">
+                    <i class="bi bi-plus-circle me-2"></i> Agregar Stock
+                </a>
+            <?php endif; ?>
         </div>
 
         <?php

@@ -104,9 +104,12 @@ include(__DIR__ . '/../BarraMenu.php');
     <?php endif; ?>
     
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <a href="index.php?c=marca&a=crear" class="btn btn-lila">
-            <i class="bi bi-plus-circle-fill"></i> Nueva Marca
-        </a>
+        <?php if ($rolUsuario === 'Administrador'): ?>
+            <a href="index.php?c=marca&a=crear" class="btn btn-lila">
+                <i class="bi bi-plus-circle-fill"></i> Nueva Marca
+            </a>
+        <?php endif; ?>
+
         <form action="index.php" method="get" class="d-flex">
             <input type="hidden" name="c" value="marca">
             <input type="hidden" name="a" value="listar">
@@ -122,7 +125,9 @@ include(__DIR__ . '/../BarraMenu.php');
                 <tr>
                     <th>ID</th>
                     <th>Nombre</th>
-                    <th class="text-center">Acciones</th>
+                    <?php if ($rolUsuario === 'Administrador'): ?>
+                        <th class="text-center">Acciones</th>
+                    <?php endif; ?>
                 </tr>
             </thead>
             <tbody>
@@ -131,22 +136,26 @@ include(__DIR__ . '/../BarraMenu.php');
                         <tr>
                             <td><?= htmlspecialchars($marca->idMarca) ?></td>
                             <td><?= htmlspecialchars($marca->nombre) ?></td>
-                            <td class="text-center">
-                                <a href="index.php?c=marca&a=editar&id=<?= htmlspecialchars($marca->idMarca) ?>" 
-                                   class="btn btn-edit btn-sm">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <a href="index.php?c=marca&a=eliminar&id=<?= htmlspecialchars($marca->idMarca) ?>"
-                                   class="btn btn-delete btn-sm"
-                                   onclick="return confirm('¿Está seguro de que desea eliminar esta marca?');">
-                                    <i class="bi bi-trash"></i>
-                                </a>
-                            </td>
+                            <?php if ($rolUsuario === 'Administrador'): ?>
+                                <td class="text-center">
+                                    <a href="index.php?c=marca&a=editar&id=<?= htmlspecialchars($marca->idMarca) ?>" 
+                                    class="btn btn-edit btn-sm">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="index.php?c=marca&a=eliminar&id=<?= htmlspecialchars($marca->idMarca) ?>"
+                                    class="btn btn-delete btn-sm"
+                                    onclick="return confirm('¿Está seguro de que desea eliminar esta marca?');">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="3" class="text-center text-muted">No se encontraron marcas.</td>
+                        <td colspan="<?= ($rolUsuario === 'Administrador') ? 3 : 2 ?>" class="text-center text-muted">
+                            No se encontraron marcas.
+                        </td>
                     </tr>
                 <?php endif; ?>
             </tbody>

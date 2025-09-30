@@ -86,9 +86,11 @@ include(__DIR__ . '/../BarraMenu.php');
     <div class="content container mt-5">
         <h1 class="mb-4"><i class="bi bi-tags me-2"></i> Lista de Categorías</h1>
 
-        <a href="index.php?c=categoria&a=crear" class="btn btn-lila mb-3">
-            <i class="bi bi-plus-circle-fill"></i> Nueva Categoría
-        </a>
+        <?php if ($rolUsuario === 'Administrador'): ?>
+            <a href="index.php?c=categoria&a=crear" class="btn btn-lila mb-3">
+                <i class="bi bi-plus-circle-fill"></i> Nueva Categoría
+            </a>
+        <?php endif; ?>
 
         <div class="table-responsive">
             <table class="table table-bordered table-hover align-middle">
@@ -96,7 +98,9 @@ include(__DIR__ . '/../BarraMenu.php');
                     <tr>
                         <th>Código</th>
                         <th>Nombre</th>
-                        <th class="text-center">Acciones</th>
+                        <?php if ($rolUsuario === 'Administrador'): ?>
+                            <th class="text-center">Acciones</th>
+                        <?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -105,19 +109,28 @@ include(__DIR__ . '/../BarraMenu.php');
                             <tr>
                                 <td><?= htmlspecialchars($c->codigo) ?></td>
                                 <td><?= htmlspecialchars($c->nombre) ?></td>
-                                <td class="text-center">
-                                    <a href="index.php?c=categoria&a=editar&id=<?= $c->idCategoria ?>" class="btn btn-edit btn-sm">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <a href="index.php?c=categoria&a=eliminar&id=<?= $c->idCategoria ?>" class="btn btn-delete btn-sm" onclick="return confirm('¿Seguro de eliminar?');">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
-                                </td>
+
+                                <?php if ($rolUsuario === 'Administrador'): ?>
+                                    <td class="text-center">
+                                        <a href="index.php?c=categoria&a=editar&id=<?= $c->idCategoria ?>" 
+                                           class="btn btn-edit btn-sm">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="index.php?c=categoria&a=eliminar&id=<?= $c->idCategoria ?>" 
+                                           class="btn btn-delete btn-sm" 
+                                           onclick="return confirm('¿Seguro de eliminar?');">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </td>
+                                <?php endif; ?>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="4" class="text-center text-muted">No se encontraron categorías.</td>
+                            <td colspan="<?= ($rolUsuario === 'Administrador') ? 3 : 2 ?>" 
+                                class="text-center text-muted">
+                                No se encontraron categorías.
+                            </td>
                         </tr>
                     <?php endif; ?>
                 </tbody>

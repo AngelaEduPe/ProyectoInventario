@@ -105,9 +105,14 @@ include(__DIR__ . '/../BarraMenu.php');
     <?php endif; ?>
     
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <a href="index.php?c=producto&a=crear" class="btn btn-lila">
-            <i class="bi bi-plus-circle-fill"></i> Nuevo Producto
-        </a>
+        <!-- ✅ Solo admin ve este botón -->
+        <?php if ($rolUsuario === 'Administrador'): ?>
+            <a href="index.php?c=producto&a=crear" class="btn btn-lila">
+                <i class="bi bi-plus-circle-fill"></i> Nuevo Producto
+            </a>
+        <?php endif; ?>
+
+        <!-- ✅ Siempre visible el filtro de búsqueda -->
         <form action="index.php" method="get" class="d-flex">
             <input type="hidden" name="c" value="producto">
             <input type="hidden" name="a" value="listar">
@@ -127,7 +132,9 @@ include(__DIR__ . '/../BarraMenu.php');
                     <th>Descripción</th>
                     <th>Subcategoría</th>
                     <th>Marca</th>
-                    <th class="text-center">Acciones</th>
+                    <?php if ($rolUsuario === 'Administrador'): ?>
+                        <th class="text-center">Acciones</th>
+                    <?php endif; ?>
                 </tr>
             </thead>
             <tbody>
@@ -140,22 +147,26 @@ include(__DIR__ . '/../BarraMenu.php');
                             <td><?= htmlspecialchars($producto->descripcion) ?></td>
                             <td><?= htmlspecialchars($producto->subcategoria) ?></td>
                             <td><?= htmlspecialchars($producto->marca) ?></td>
-                            <td class="text-center">
-                                <a href="index.php?c=producto&a=editar&id=<?= htmlspecialchars($producto->idProducto) ?>" 
-                                class="btn btn-edit btn-sm">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <a href="index.php?c=producto&a=eliminar&id=<?= htmlspecialchars($producto->idProducto) ?>"
-                                class="btn btn-delete btn-sm"
-                                onclick="return confirm('¿Está seguro de que desea eliminar este producto?');">
-                                    <i class="bi bi-trash"></i>
-                                </a>
-                            </td>
+                            <?php if ($rolUsuario === 'Administrador'): ?>
+                                <td class="text-center">
+                                    <a href="index.php?c=producto&a=editar&id=<?= htmlspecialchars($producto->idProducto) ?>" 
+                                    class="btn btn-edit btn-sm">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="index.php?c=producto&a=eliminar&id=<?= htmlspecialchars($producto->idProducto) ?>"
+                                    class="btn btn-delete btn-sm"
+                                    onclick="return confirm('¿Está seguro de que desea eliminar este producto?');">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="7" class="text-center text-muted">No se encontraron productos.</td>
+                        <td colspan="<?= $rolUsuario === 'Administrador' ? '7' : '6' ?>" class="text-center text-muted">
+                            No se encontraron productos.
+                        </td>
                     </tr>
                 <?php endif; ?>
             </tbody>

@@ -87,9 +87,11 @@ include(__DIR__ . '/../BarraMenu.php');
     <div class="content container mt-5">
         <h1 class="mb-4"><i class="bi bi-tag"></i> Lista de Subcategorías</h1>
 
-        <a href="index.php?c=subcategoria&a=crear" class="btn btn-lila mb-3">
-            <i class="bi bi-plus-circle-fill"></i> Nueva Subcategoría
-        </a>
+        <?php if ($rolUsuario === 'Administrador'): ?>
+            <a href="index.php?c=subcategoria&a=crear" class="btn btn-lila mb-3">
+                <i class="bi bi-plus-circle-fill"></i> Nueva Subcategoría
+            </a>
+        <?php endif; ?>
 
         <div class="table-responsive">
             <table class="table table-bordered table-hover align-middle">
@@ -98,7 +100,9 @@ include(__DIR__ . '/../BarraMenu.php');
                         <th>Código</th>
                         <th>Nombre</th>
                         <th>Categoría</th>
-                        <th class="text-center">Acciones</th>
+                        <?php if ($rolUsuario === 'Administrador'): ?>
+                            <th class="text-center">Acciones</th>
+                        <?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -108,19 +112,26 @@ include(__DIR__ . '/../BarraMenu.php');
                                 <td><?= htmlspecialchars($sc->codigo) ?></td>
                                 <td><?= htmlspecialchars($sc->nombre) ?></td>
                                 <td><?= htmlspecialchars($sc->categoria) ?></td>
-                                <td class="text-center">
-                                    <a href="index.php?c=subcategoria&a=editar&id=<?= $sc->idSubcategoria ?>" class="btn btn-edit btn-sm">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <button class="btn btn-delete btn-sm btn-eliminar" data-id="<?= $sc->idSubcategoria ?>">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </td>
+                                <?php if ($rolUsuario === 'Administrador'): ?>
+                                    <td class="text-center">
+                                        <a href="index.php?c=subcategoria&a=editar&id=<?= $sc->idSubcategoria ?>" 
+                                           class="btn btn-edit btn-sm">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button class="btn btn-delete btn-sm btn-eliminar" 
+                                                data-id="<?= $sc->idSubcategoria ?>">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                <?php endif; ?>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="4" class="text-center text-muted">No se encontraron subcategorías.</td>
+                            <td colspan="<?= $rolUsuario === 'Administrador' ? 4 : 3 ?>" 
+                                class="text-center text-muted">
+                                No se encontraron subcategorías.
+                            </td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -131,7 +142,8 @@ include(__DIR__ . '/../BarraMenu.php');
             <ul class="pagination justify-content-center">
                 <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
                     <li class="page-item <?= ($i == ($paginaActual ?? 1)) ? 'active' : '' ?>">
-                        <a class="page-link" href="index.php?c=subcategoria&a=listar&pagina=<?= $i ?><?= htmlspecialchars($termino ? '&q=' . $termino : '') ?>">
+                        <a class="page-link" 
+                           href="index.php?c=subcategoria&a=listar&pagina=<?= $i ?><?= htmlspecialchars($termino ? '&q=' . $termino : '') ?>">
                             <?= $i ?>
                         </a>
                     </li>
@@ -140,6 +152,7 @@ include(__DIR__ . '/../BarraMenu.php');
         </nav>
     </div>
 
+    <?php if ($rolUsuario === 'Administrador'): ?>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.btn-eliminar').forEach(button => {
@@ -163,5 +176,6 @@ include(__DIR__ . '/../BarraMenu.php');
             });
         });
     </script>
+    <?php endif; ?>
 </body>
 </html>
