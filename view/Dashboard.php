@@ -64,6 +64,10 @@ include("BarraMenu.php");
             border-top: 1px solid #eee;
             padding: 10px 0;
         }
+        .card-dashboard h5 {
+            color: #000 !important;
+        }
+
     </style>
 </head>
 <body>
@@ -79,8 +83,8 @@ include("BarraMenu.php");
                             <i class="bi bi-box-seam"></i>
                         </div>
                         <div>
-                            <h5 class="mb-1">Productos</h5>
-                            <h3 class="mb-0"><?php echo $totalStock; ?></h3>
+                            <h5 class="mb-0 text-dark">Productos</h5>
+                            <h3 class="mt-1 mb-0 text-dark"><?php echo $totalStock; ?></h3>
                         </div>
                     </div>
                 </div>
@@ -95,8 +99,8 @@ include("BarraMenu.php");
                             <i class="bi bi-truck"></i>
                         </div>
                         <div>
-                            <h5 class="mb-1">Proveedores</h5>
-                            <h3 class="mb-0"><?php echo $totalProv; ?></h3>
+                            <h5 class="mb-1 text-dark">Proveedores</h5>
+                            <h3 class="mb-0 text-dark"><?php echo $totalProv; ?></h3>
                         </div>
                     </div>
                 </div>
@@ -112,8 +116,8 @@ include("BarraMenu.php");
                                 <i class="bi bi-people-fill"></i>
                             </div>
                             <div>
-                                <h5 class="mb-1">Total Usuarios</h5>
-                                <h3 class="mb-0"><?php echo $totalUser; ?></h3>
+                                <h5 class="mb-1 text-dark">Total Usuarios</h5>
+                                <h3 class="mb-0 text-dark"><?php echo $totalUser; ?></h3>
                             </div>
                         </div>
                     </div>
