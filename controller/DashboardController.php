@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/Conexion.php';
-require_once __DIR__ . '/../model/Producto.php'; 
+require_once __DIR__ . '/../model/Stock.php'; 
 
 class DashboardController {
     private $conn;
@@ -36,8 +36,14 @@ class DashboardController {
         $totalUser = $stmt->fetch(PDO::FETCH_ASSOC)['totalUser'] ?? 0;
         $stmt->closeCursor();
         
-        $productoModel = new Producto();
-        $productosBajoStock = $productoModel->obtenerProductosBajoStock();
+        $stockModel = new Stock(); 
+
+        try {
+            $productosBajoStock = $stockModel->obtenerProductosBajoStock();
+        } catch (Exception $e) {
+            error_log("Error al cargar productos bajo stock: " . $e->getMessage());
+            $productosBajoStock = []; 
+        }
         require_once __DIR__ . '/../view/Dashboard.php';
     }
 }

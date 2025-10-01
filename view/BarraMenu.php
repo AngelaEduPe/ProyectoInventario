@@ -7,7 +7,7 @@ $rolUsuario = $_SESSION['nombreRol'] ?? '';
 $base_url = "http://localhost/TPWEB/ProyectoInventario/";
 ?>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel-stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
@@ -29,6 +29,10 @@ $base_url = "http://localhost/TPWEB/ProyectoInventario/";
         display: flex;
         flex-direction: column;
         box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+        /* ********** CAMBIOS AQUI ********** */
+        max-height: 100vh;
+        overflow-y: auto; 
+        /* ********************************** */
     }
     .sidebar h4 {
         text-align: center;
@@ -65,7 +69,9 @@ $base_url = "http://localhost/TPWEB/ProyectoInventario/";
         letter-spacing: 0.5px;
     }
     .logout {
-        margin-top: auto;
+        /* Para que siempre esté al final del scroll */
+        margin-top: auto; 
+        padding-bottom: 20px; /* Espacio extra al final */
     }
     .content {
         margin-left: 250px;
@@ -79,21 +85,29 @@ $base_url = "http://localhost/TPWEB/ProyectoInventario/";
     <a href="<?= $base_url ?>index.php?c=dashboard&a=index"><i class="bi bi-speedometer2"></i> Dashboard</a>
     
     <div class="subtitle">Inventario</div>
+    <div class="subtitle">Catálogos</div>
     <a href="<?= $base_url ?>index.php?c=categoria&a=listar"><i class="bi bi-tags"></i> Categorías</a>
     <a href="<?= $base_url ?>index.php?c=subcategoria&a=listar"><i class="bi bi-tag"></i> Subcategorías</a>
     <a href="<?= $base_url ?>index.php?c=marca&a=listar"><i class="bi bi-bookmark"></i> Marcas</a>
     <a href="<?= $base_url ?>index.php?c=producto&a=listar"><i class="bi bi-box-seam"></i> Productos</a>
     
-    <div class="subtitle">Movimientos</div>
-    <a href="<?= $base_url ?>index.php?c=compra&a=listar"><i class="bi bi-cart4"></i> Compras</a>
-    <a href="<?= $base_url ?>index.php?c=recibido&a=listar"><i class="bi bi-basket3"></i> Recibidos</a>
+    <div class="subtitle">Documentos de Ingreso</div>
+    <a href="<?= $base_url ?>index.php?c=pedido&a=listar"><i class="bi bi-list-check"></i> Listar Pedidos</a>
+    <a href="<?= $base_url ?>index.php?c=pedido&a=form"><i class="bi bi-list-columns-reverse"></i> Orden de Pedido</a>
+    <a href="<?= $base_url ?>index.php?c=recepcion&a=form"><i class="bi bi-inbox-fill"></i> Recepción de Stock</a>
+    <a href="<?= $base_url ?>index.php?c=devolucion&a=form"><i class="bi bi-arrow-return-right"></i> Devolución (Ingreso)</a>
     
-    <div class="subtitle">Reportes</div>
+    <div class="subtitle">Documentos de Egreso</div>
+    <a href="<?= $base_url ?>index.php?c=traslado&a=form"><i class="bi bi-truck"></i> Traslado (Salida)</a>
+    <a href="<?= $base_url ?>index.php?c=descarte&a=form"><i class="bi bi-trash"></i> Descarte (Merma)</a>
+    
+    <div class="subtitle">Ajustes y Consultas</div>
+    <a href="<?= $base_url ?>index.php?c=stock&a=form"><i class="bi bi-tools"></i> Ajuste Manual Stock</a>
     <a href="<?= $base_url ?>index.php?c=reporte&a=stock"><i class="bi bi-graph-up-arrow"></i> Reporte de Stock</a>
-    
+
     <?php if ($rolUsuario === 'Administrador'): ?>
         <div class="subtitle">Mantenimiento</div>
-        <a href="<?= $base_url ?>index.php?c=proveedor&a=listar"><i class="bbi bi-truck"></i> Proveedores</a>
+        <a href="<?= $base_url ?>index.php?c=proveedor&a=listar"><i class="bi bi-truck"></i> Proveedores</a>
         <a href="<?= $base_url ?>index.php?c=usuario&a=listar"><i class="bi bi-people-fill"></i> Usuarios</a>
     <?php endif; ?>
     

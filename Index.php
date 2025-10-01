@@ -6,6 +6,13 @@ require_once __DIR__ . '/controller/ProductoController.php';
 require_once __DIR__ . '/controller/DashboardController.php';
 require_once __DIR__ . '/controller/ProveedorController.php';
 require_once __DIR__ . '/model/Subcategoria.php';
+require_once __DIR__ . '/controller/PedidoController.php'; 
+require_once __DIR__ . '/controller/RecepcionController.php';
+require_once __DIR__ . '/controller/DevolucionController.php';
+require_once __DIR__ . '/controller/TrasladoController.php';
+require_once __DIR__ . '/controller/DescarteController.php';
+require_once __DIR__ . '/controller/UbigeoController.php';
+require_once __DIR__ . '/controller/TiendaController.php';
 
 if (isset($_GET['logout'])) {
     session_destroy();

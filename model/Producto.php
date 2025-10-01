@@ -133,33 +133,7 @@ class Producto {
         }
     }
 
-    public function insertarStock($idProducto, $cantidad, $fechaVencimiento, $usuario) {
-        try {
-            $sql = "CALL sp_gestionar_stock(?, ?, ?, ?)";
-            $stm = $this->pdo->prepare($sql);
-            $stm->execute([
-                $idProducto,
-                $cantidad,
-                $fechaVencimiento,
-                $usuario
-            ]);
-            return true;
-        } catch (Exception $e) {
-            die($e->getMessage());
-        }
-    }
-
-
-    public function obtenerProductosBajoStock() {
-        try {
-            $sql = "CALL sp_obtener_productos_bajo_stock()";
-            $stm = $this->pdo->prepare($sql);
-            $stm->execute();
-            return $stm->fetchAll(PDO::FETCH_ASSOC);
-        } catch (Exception $e) {
-            die("Error al obtener productos con bajo stock: " . $e->getMessage());
-        }
-    }
+    
 
 
 }
