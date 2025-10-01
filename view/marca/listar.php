@@ -110,13 +110,21 @@ include(__DIR__ . '/../BarraMenu.php');
             </a>
         <?php endif; ?>
 
-        <form action="index.php" method="get" class="d-flex">
-            <input type="hidden" name="c" value="marca">
-            <input type="hidden" name="a" value="listar">
-            <input type="text" name="q" class="form-control me-2" placeholder="Buscar por nombre..." 
-                   value="<?= htmlspecialchars($terminoBusqueda ?? '') ?>">
-            <button class="btn btn-outline-lila" type="submit"><i class="bi bi-search"></i> Buscar</button>
-        </form>
+        <div class="d-flex">
+            <form action="index.php" method="get" class="d-flex me-2">
+                <input type="hidden" name="c" value="marca">
+                <input type="hidden" name="a" value="listar">
+                <input type="text" name="q" class="form-control me-2" placeholder="Buscar por nombre..." 
+                       value="<?= htmlspecialchars($terminoBusqueda ?? '') ?>">
+                <button class="btn btn-outline-lila" type="submit">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+            </form>
+
+            <a href="index.php?c=marca&a=exportarExcel" class="btn btn-success">
+                    <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </a>
+        </div>
     </div>
 
     <div class="table-responsive">

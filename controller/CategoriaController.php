@@ -71,4 +71,20 @@ class CategoriaController {
         header("Location: index.php?c=categoria&a=listar");
         exit;
     }
+
+public function exportarExcel() {
+    $categorias = $this->model->listar();
+
+    header("Content-Type: application/vnd.ms-excel");
+    header("Content-Disposition: attachment; filename=categorias.xls");
+    header("Pragma: no-cache");
+    header("Expires: 0");
+
+    echo "Codigo\tNombre\n";
+    foreach ($categorias as $c) {
+        echo $c->codigo . "\t" . $c->nombre . "\n";
+    }
+    exit;
+}
+
 }

@@ -105,14 +105,12 @@ include(__DIR__ . '/../BarraMenu.php');
     <?php endif; ?>
     
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <!-- ✅ Solo admin ve este botón -->
         <?php if ($rolUsuario === 'Administrador'): ?>
             <a href="index.php?c=producto&a=crear" class="btn btn-lila">
                 <i class="bi bi-plus-circle-fill"></i> Nuevo Producto
             </a>
         <?php endif; ?>
 
-        <!-- ✅ Siempre visible el filtro de búsqueda -->
         <form action="index.php" method="get" class="d-flex">
             <input type="hidden" name="c" value="producto">
             <input type="hidden" name="a" value="listar">

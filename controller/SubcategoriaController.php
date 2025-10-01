@@ -79,4 +79,20 @@ class SubcategoriaController {
         header("Location: index.php?c=subcategoria&a=listar");
         exit;
     }
+
+    public function exportarExcel() {
+    $subcategorias = $this->model->listar();
+
+    header("Content-Type: application/vnd.ms-excel");
+    header("Content-Disposition: attachment; filename=subcategorias.xls");
+    header("Pragma: no-cache");
+    header("Expires: 0");
+
+    echo "Codigo\tNombre\tCategoria\n";
+    foreach ($subcategorias as $sc) {
+        echo $sc->codigo . "\t" . $sc->nombre . "\t" . $sc->categoria . "\n";
+    }
+    exit;
+}
+
 }
