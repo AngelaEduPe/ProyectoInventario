@@ -86,11 +86,19 @@ include(__DIR__ . '/../BarraMenu.php');
     <div class="content container mt-5">
         <h1 class="mb-4"><i class="bi bi-tags me-2"></i> Lista de Categorías</h1>
 
-        <?php if ($rolUsuario === 'Administrador'): ?>
-            <a href="index.php?c=categoria&a=crear" class="btn btn-lila mb-3">
-                <i class="bi bi-plus-circle-fill"></i> Nueva Categoría
-            </a>
-        <?php endif; ?>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <?php if ($rolUsuario === 'Administrador'): ?>
+                <a href="index.php?c=categoria&a=crear" class="btn btn-lila">
+                    <i class="bi bi-plus-circle-fill"></i> Nueva Categoría
+                </a>
+            <?php endif; ?>
+
+            <div>
+                <a href="index.php?c=categoria&a=exportarExcel" class="btn btn-success">
+                    <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+                </a>
+            </div>
+        </div>
 
         <div class="table-responsive">
             <table class="table table-bordered table-hover align-middle">
@@ -138,4 +146,5 @@ include(__DIR__ . '/../BarraMenu.php');
         </div>
     </div>
 </body>
+
 </html>

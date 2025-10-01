@@ -82,4 +82,20 @@ class MarcaController {
         header("Location: index.php?c=marca&a=listar");
         exit;
     }
+
+    public function exportarExcel() {
+        $marcas = $this->model->listar();
+
+        header("Content-Type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename=marcas.xls");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+
+        echo "ID\tNombre\n";
+        foreach ($marcas as $marca) {
+            echo $marca->idMarca . "\t" . $marca->nombre . "\n";
+        }
+        exit;
+    }
+
 }

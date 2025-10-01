@@ -87,11 +87,17 @@ include(__DIR__ . '/../BarraMenu.php');
     <div class="content container mt-5">
         <h1 class="mb-4"><i class="bi bi-tag"></i> Lista de Subcategorías</h1>
 
-        <?php if ($rolUsuario === 'Administrador'): ?>
-            <a href="index.php?c=subcategoria&a=crear" class="btn btn-lila mb-3">
-                <i class="bi bi-plus-circle-fill"></i> Nueva Subcategoría
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <?php if ($rolUsuario === 'Administrador'): ?>
+                <a href="index.php?c=subcategoria&a=crear" class="btn btn-lila">
+                    <i class="bi bi-plus-circle-fill"></i> Nueva Subcategoría
+                </a>
+            <?php endif; ?>
+
+            <a href="index.php?c=subcategoria&a=exportarExcel" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
             </a>
-        <?php endif; ?>
+        </div>
 
         <div class="table-responsive">
             <table class="table table-bordered table-hover align-middle">
