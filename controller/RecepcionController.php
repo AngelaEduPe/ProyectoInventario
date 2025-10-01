@@ -64,23 +64,24 @@ class RecepcionController {
         header('Content-Type: application/json');
 
         if (!$idPedido) {
-            echo json_encode(['success' => false, 'message' => 'Debe ingresar un ID de Pedido.']);
+            echo json_encode(['success' => false, 'message' => 'ID de Pedido no especificado.']);
             return;
         }
 
         try {
-            $detalles = $this->pedidoModel->obtenerDetallePedidoParaRecepcion($idPedido);
+            require_once __DIR__ . '/../model/Pedido.php';
+            $pedidoModel = new Pedido();
+            $detalles = $pedidoModel->obtenerDetallesParaRecepcion($idPedido); 
 
             if (empty($detalles)) {
-                 echo json_encode(['success' => false, 'message' => "No se encontró el pedido #{$idPedido} o no está listo para recibir."]);
-                 return;
+                echo json_encode(['success' => false, 'message' => "Pedido #{$idPedido} no encontrado o no está en estado PENDIENTE."]);
+                return;
             }
 
             echo json_encode(['success' => true, 'data' => $detalles]);
-            
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             error_log("Error al buscar pedido: " . $e->getMessage());
-            echo json_encode(['success' => false, 'message' => 'Error interno al buscar el pedido.']);
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor al buscar pedido.']);
         }
     }
 }

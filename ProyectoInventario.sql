@@ -436,7 +436,20 @@ CREATE TABLE DetalleDevolucion (
 
 ---
 
-
+-- Tabla: Tienda
+CREATE TABLE Tienda (
+    idTienda INT AUTO_INCREMENT PRIMARY KEY,
+    idDistrito INT NOT NULL,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    direccion VARCHAR(255) NOT NULL,
+    telefono VARCHAR(20),
+    esDesactivado TINYINT NOT NULL DEFAULT 0,
+    fechaCreacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    usuarioCreacion VARCHAR(100) NOT NULL,
+    fechaModificacion DATETIME NULL,
+    usuarioModificacion VARCHAR(100) NULL,
+    FOREIGN KEY (idDistrito) REFERENCES Distrito(idDistrito) 
+);
 
 -- ===============================================================================================
 -- PROCEDIMIENTOS PARA USUARIO
@@ -1688,8 +1701,6 @@ END //
 DELIMITER ;
 
 DELIMITER //
-
-DROP PROCEDURE IF EXISTS SP_ObtenerDetallePedidoParaRecepcion;
 
 CREATE PROCEDURE SP_ObtenerDetallePedidoParaRecepcion(
     IN p_idPedido INT
@@ -4268,8 +4279,7 @@ INSERT INTO Producto (codigoBarras, nombre, descripcion, idSubcategoria, idMarca
 -- ===========================================
 -- Tiendas
 -- ===========================================
-INSERT INTO Tienda 
-    (idDistrito, nombre, direccion, telefono, esDesactivado, usuarioCreacion, fechaCreacion) 
+INSERT INTO Tienda (idDistrito, nombre, direccion, telefono, esDesactivado, usuarioCreacion, fechaCreacion) 
 VALUES
 ('150101', 'Tienda Central Perú', 'Av. La Marina 250, Cercado de Lima', '982534716', 0, 'system', NOW()),
 ('080101', 'Sucursal Imperial', 'Calle del Sol 125, Centro Histórico', '989778987', 0, 'system', NOW()),
