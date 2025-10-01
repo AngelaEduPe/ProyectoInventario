@@ -12,6 +12,7 @@ Permite llevar un control de productos, proveedores y usuarios dentro de un alma
 - CRUD de categorías, subcategorías, marcas, productos, proveedores y usuarios.
 - Reporte de stock con fechas de vencimiento.
 - Registro de traslados de productos.
+- Movimientos de traslado para registrar la salida o entrada de productos entre almacenes o áreas.
 - Manejo de roles:
   - **Administrador**: acceso completo.
   - **Almacenero**: acceso limitado (solo vistas y filtros).
