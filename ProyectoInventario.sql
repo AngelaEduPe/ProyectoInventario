@@ -10,7 +10,7 @@ CREATE TABLE TipoDocumento (
     idTipoDocumento INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL,
     descripcion TEXT,
-    esDesactivado TINYINT(1) DEFAULT 0,
+    esDesactivado TINYINT DEFAULT 0,
     fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     usuarioCreacion VARCHAR(100),
     fechaModificacion DATETIME NULL,
@@ -20,7 +20,7 @@ CREATE TABLE TipoDocumento (
 CREATE TABLE Genero (
     idGenero INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(20) NOT NULL,
-    esDesactivado TINYINT(1) DEFAULT 0,
+    esDesactivado TINYINT DEFAULT 0,
     fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     usuarioCreacion VARCHAR(100),
     fechaModificacion DATETIME NULL,
@@ -30,7 +30,7 @@ CREATE TABLE Genero (
 CREATE TABLE EstadoCivil (
     idEstadoCivil INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(20) NOT NULL,
-    esDesactivado TINYINT(1) DEFAULT 0,
+    esDesactivado TINYINT DEFAULT 0,
     fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     usuarioCreacion VARCHAR(100),
     fechaModificacion DATETIME NULL,
@@ -43,7 +43,7 @@ CREATE TABLE EstadoCivil (
 CREATE TABLE Departamento (
     idDepartamento INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL,
-    esDesactivado TINYINT(1) DEFAULT 0,
+    esDesactivado TINYINT DEFAULT 0,
     fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     usuarioCreacion VARCHAR(100),
     fechaModificacion DATETIME NULL,
@@ -54,7 +54,7 @@ CREATE TABLE Provincia (
     idProvincia INT AUTO_INCREMENT PRIMARY KEY,
     idDepartamento INT,
     nombre VARCHAR(50) NOT NULL,
-    esDesactivado TINYINT(1) DEFAULT 0,
+    esDesactivado TINYINT DEFAULT 0,
     fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     usuarioCreacion VARCHAR(100),
     fechaModificacion DATETIME NULL,
@@ -66,7 +66,7 @@ CREATE TABLE Distrito (
     idDistrito INT AUTO_INCREMENT PRIMARY KEY,
     idProvincia INT,
     nombre VARCHAR(50) NOT NULL,
-    esDesactivado TINYINT(1) DEFAULT 0,
+    esDesactivado TINYINT DEFAULT 0,
     fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     usuarioCreacion VARCHAR(100),
     fechaModificacion DATETIME NULL,
@@ -89,7 +89,7 @@ CREATE TABLE Empleado (
     idEstadoCivil INT NULL,
     direccion TEXT,
     idDistrito INT NULL,
-    esDesactivado TINYINT(1) DEFAULT 0,
+    esDesactivado TINYINT DEFAULT 0,
     fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     usuarioCreacion VARCHAR(100),
     fechaModificacion DATETIME NULL,
@@ -109,7 +109,7 @@ CREATE TABLE Rol (
     fechaModificacion DATETIME NULL,
     usuarioCreacion VARCHAR(100),
     usuarioModificacion VARCHAR(100),
-    esDesactivado TINYINT(1) DEFAULT 0
+    esDesactivado TINYINT DEFAULT 0
 );
 
 CREATE TABLE Usuario (
@@ -123,7 +123,7 @@ CREATE TABLE Usuario (
     fechaModificacion DATETIME NULL,
     usuarioCreacion VARCHAR(100),
     usuarioModificacion VARCHAR(100),
-    esDesactivado TINYINT(1) DEFAULT 0,
+    esDesactivado TINYINT DEFAULT 0,
     FOREIGN KEY (idEmpleado) REFERENCES Empleado(idEmpleado),
     FOREIGN KEY (idRol) REFERENCES Rol(idRol)
 );
@@ -139,7 +139,7 @@ CREATE TABLE Categoria (
     fechaModificacion DATETIME NULL,
     usuarioCreacion VARCHAR(100),
     usuarioModificacion VARCHAR(100),
-    esDesactivado TINYINT(1) DEFAULT 0
+    esDesactivado TINYINT DEFAULT 0
 );
 
 CREATE TABLE Subcategoria (
@@ -151,10 +151,34 @@ CREATE TABLE Subcategoria (
     fechaModificacion DATETIME NULL,
     usuarioCreacion VARCHAR(100),
     usuarioModificacion VARCHAR(100),
-    esDesactivado TINYINT(1) DEFAULT 0,
+    esDesactivado TINYINT DEFAULT 0,
     FOREIGN KEY (idCategoria)
         REFERENCES Categoria (idCategoria)
 );
+
+DELIMITER $$
+
+CREATE TRIGGER trg_subcategoria_codigo
+BEFORE INSERT ON Subcategoria
+FOR EACH ROW
+BEGIN
+    DECLARE v_cod_categoria INT;
+    DECLARE v_max_consecutivo INT;
+    
+    SELECT codigo INTO v_cod_categoria
+    FROM Categoria
+    WHERE idCategoria = NEW.idCategoria;
+
+    SELECT IFNULL(MAX(CAST(RIGHT(codigo, 2) AS UNSIGNED)), 0)
+    INTO v_max_consecutivo
+    FROM Subcategoria
+    WHERE idCategoria = NEW.idCategoria;
+
+    -- generar el nuevo código: [codigoCategoria][+1 en 2 dígitos]
+    SET NEW.codigo = CONCAT(v_cod_categoria, LPAD(v_max_consecutivo + 1, 2, '0'));
+END$$
+
+DELIMITER ;
 
 CREATE TABLE Marca (
     idMarca INT AUTO_INCREMENT PRIMARY KEY,
@@ -163,7 +187,7 @@ CREATE TABLE Marca (
     fechaModificacion DATETIME NULL,
     usuarioCreacion VARCHAR(100),
     usuarioModificacion VARCHAR(100),
-    esDesactivado TINYINT(1) DEFAULT 0
+    esDesactivado TINYINT DEFAULT 0
 );
 
 CREATE TABLE Producto (
@@ -180,10 +204,34 @@ CREATE TABLE Producto (
     fechaModificacion DATETIME NULL,
     usuarioCreacion VARCHAR(100),
     usuarioModificacion VARCHAR(100),
-    esDesactivado TINYINT(1) DEFAULT 0,
+    esDesactivado TINYINT DEFAULT 0,
     FOREIGN KEY (idSubcategoria) REFERENCES Subcategoria(idSubcategoria),
     FOREIGN KEY (idMarca) REFERENCES Marca(idMarca)
 );
+
+DELIMITER $$
+
+CREATE TRIGGER generar_sku_producto
+BEFORE INSERT ON Producto
+FOR EACH ROW
+BEGIN
+    DECLARE v_cod_subcategoria INT;
+    DECLARE v_consecutivo INT;
+
+    SELECT codigo
+    INTO v_cod_subcategoria
+    FROM Subcategoria
+    WHERE idSubcategoria = NEW.idSubcategoria;
+
+    SELECT IFNULL(MAX(CAST(RIGHT(sku,3) AS UNSIGNED)),0) + 1
+    INTO v_consecutivo
+    FROM Producto
+    WHERE sku LIKE CONCAT(v_cod_subcategoria, '%'); 
+
+    SET NEW.sku = CONCAT(v_cod_subcategoria, LPAD(v_consecutivo,3,'0'));
+END$$
+
+DELIMITER ;
 
 -- ===========================================
 -- Proveedores y stock
@@ -203,7 +251,7 @@ CREATE TABLE Proveedor (
     fechaModificacion DATETIME NULL,
     usuarioCreacion VARCHAR(100),
     usuarioModificacion VARCHAR(100),
-    esDesactivado TINYINT(1) DEFAULT 0,
+    esDesactivado TINYINT DEFAULT 0,
     FOREIGN KEY (idTipoDocumento) REFERENCES TipoDocumento(idTipoDocumento),
     FOREIGN KEY (idDistrito) REFERENCES Distrito(idDistrito)
 );
@@ -211,14 +259,15 @@ CREATE TABLE Proveedor (
 CREATE TABLE Stock (
     idStock INT AUTO_INCREMENT PRIMARY KEY,
     idProducto INT,
-    cantidad INT DEFAULT 0,
-    fechaVencimiento DATE NULL,
-    fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-    fechaModificacion DATETIME NULL,
-    usuarioCreacion VARCHAR(100),
-    usuarioModificacion VARCHAR(100),
-    esDesactivado TINYINT(1) DEFAULT 0,
-    FOREIGN KEY (idProducto) REFERENCES Producto(idProducto)
+	cantidad INT DEFAULT 0,
+	fechaVencimiento DATE NULL,
+	fechaRecepcion DATETIME DEFAULT CURRENT_TIMESTAMP, 
+	fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+	fechaModificacion DATETIME NULL,
+	usuarioCreacion VARCHAR(100),
+	usuarioModificacion VARCHAR(100),
+	esDesactivado TINYINT DEFAULT 0,
+	FOREIGN KEY (idProducto) REFERENCES Producto(idProducto)
 );
 
 -- ===========================================
@@ -227,7 +276,9 @@ CREATE TABLE Stock (
 CREATE TABLE TipoMovimiento (
     idTipoMovimiento INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL,
-    esDesactivado TINYINT(1) DEFAULT 0,
+    afectaStock ENUM('+1', '-1') NOT NULL,
+    descripcion TEXT,
+    esDesactivado TINYINT DEFAULT 0,
     fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     usuarioCreacion VARCHAR(100),
     fechaModificacion DATETIME NULL,
@@ -236,16 +287,15 @@ CREATE TABLE TipoMovimiento (
 
 CREATE TABLE Movimiento (
     idMovimiento INT AUTO_INCREMENT PRIMARY KEY,
-    idTipoMovimiento INT,
+    idTipoMovimiento INT NOT NULL,
     fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
     idUsuario INT,
-    documentoReferenciaTipo VARCHAR(50) NULL,
     documentoReferenciaId INT NULL,
     fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     fechaModificacion DATETIME NULL,
     usuarioCreacion VARCHAR(100),
     usuarioModificacion VARCHAR(100),
-    esDesactivado TINYINT(1) DEFAULT 0,
+    esDesactivado TINYINT DEFAULT 0,
     FOREIGN KEY (idTipoMovimiento) REFERENCES TipoMovimiento(idTipoMovimiento),
     FOREIGN KEY (idUsuario) REFERENCES Usuario(idUsuario)
 );
@@ -256,13 +306,15 @@ CREATE TABLE DetalleMovimiento (
     idProducto INT,
     cantidad INT NOT NULL,
     precioUnitario DECIMAL(10,2),
+	idStockAfectado INT NOT NULL,
     fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     fechaModificacion DATETIME NULL,
     usuarioCreacion VARCHAR(100),
     usuarioModificacion VARCHAR(100),
-    esDesactivado TINYINT(1) DEFAULT 0,
+    esDesactivado TINYINT DEFAULT 0,
     FOREIGN KEY (idMovimiento) REFERENCES Movimiento(idMovimiento),
-    FOREIGN KEY (idProducto) REFERENCES Producto(idProducto)
+    FOREIGN KEY (idProducto) REFERENCES Producto(idProducto),
+    FOREIGN KEY (idStockAfectado) REFERENCES Stock(idStock)
 );
 
 -- ===========================================
@@ -275,7 +327,7 @@ CREATE TABLE EstadoPedido (
     fechaModificacion DATETIME NULL,
     usuarioCreacion VARCHAR(100),
     usuarioModificacion VARCHAR(100),
-    esDesactivado TINYINT(1) DEFAULT 0
+    esDesactivado TINYINT DEFAULT 0
 );
 
 CREATE TABLE Pedido (
@@ -288,7 +340,7 @@ CREATE TABLE Pedido (
     fechaModificacion DATETIME NULL,
     usuarioCreacion VARCHAR(100),
     usuarioModificacion VARCHAR(100),
-    esDesactivado TINYINT(1) DEFAULT 0,
+    esDesactivado TINYINT DEFAULT 0,
     FOREIGN KEY (idProveedor) REFERENCES Proveedor(idProveedor),
     FOREIGN KEY (idEstado) REFERENCES EstadoPedido(idEstado),
     FOREIGN KEY (idUsuario) REFERENCES Usuario(idUsuario)
@@ -299,13 +351,15 @@ CREATE TABLE DetallePedido (
     idPedido INT,
     idProducto INT,
     cantidad INT NOT NULL,
-    precioUnitario DECIMAL(10,2),
+    costoUnitario DECIMAL(10,2),
+    fechaVencimiento DATE NULL,
     fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     fechaModificacion DATETIME NULL,
     usuarioCreacion VARCHAR(100),
     usuarioModificacion VARCHAR(100),
-    esDesactivado TINYINT(1) DEFAULT 0,
-    FOREIGN KEY (idPedido) REFERENCES Pedido(idPedido),
+    esDesactivado TINYINT DEFAULT 0,
+    FOREIGN KEY (idPedido) REFERENCES Pedido(idPedido)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (idProducto) REFERENCES Producto(idProducto)
 );
 
@@ -314,14 +368,14 @@ CREATE TABLE DetallePedido (
 -- ===========================================
 CREATE TABLE Descarte (
     idDescarte INT AUTO_INCREMENT PRIMARY KEY,
-    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fechaEvento DATETIME NOT NULL,
     idUsuario INT,
     razon VARCHAR(255) NULL,
     fechaCreacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     fechaModificacion DATETIME NULL,
     usuarioCreacion VARCHAR(100),
     usuarioModificacion VARCHAR(100),
-    esDesactivado TINYINT(1) DEFAULT 0,
+    esDesactivado TINYINT DEFAULT 0,
     FOREIGN KEY (idUsuario) REFERENCES Usuario(idUsuario)
 );
 
@@ -335,15 +389,1401 @@ CREATE TABLE DetalleDescarte (
     fechaModificacion DATETIME NULL,
     usuarioCreacion VARCHAR(100),
     usuarioModificacion VARCHAR(100),
-    esDesactivado TINYINT(1) DEFAULT 0,
+    esDesactivado TINYINT DEFAULT 0,
     FOREIGN KEY (idDescarte) REFERENCES Descarte(idDescarte),
     FOREIGN KEY (idProducto) REFERENCES Producto(idProducto),
     FOREIGN KEY (idStock) REFERENCES Stock(idStock)
 );
+-- -----------------------------------------------------
+-- Table: Devolucion (Encabezado del Documento de Origen)
+-- -----------------------------------------------------
+CREATE TABLE Devolucion (
+  idDevolucion INT NOT NULL AUTO_INCREMENT,
+  documentoReferencia VARCHAR(50) NULL,
+  motivo VARCHAR(255) NOT NULL,
+  idUsuario INT NOT NULL,
+  esDesactivado TINYINT NOT NULL DEFAULT 0,
+  fechaCreacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  usuarioCreacion VARCHAR(100) NOT NULL,
+  fechaModificacion DATETIME NULL,
+  usuarioModificacion VARCHAR(100) NULL,
+  PRIMARY KEY (idDevolucion),
+  FOREIGN KEY (idUsuario) REFERENCES Usuario (idUsuario)
+) ENGINE = InnoDB;
 
--- ===========================================
+---
+
+-- -----------------------------------------------------
+-- Table: DetalleDevolucion (Detalle de los Productos Devueltos)
+-- -----------------------------------------------------
+CREATE TABLE DetalleDevolucion (
+  idDetalleDevolucion INT NOT NULL AUTO_INCREMENT,
+  idDevolucion INT NOT NULL,
+  idProducto INT NOT NULL,
+  cantidad INT NOT NULL,
+  observacion VARCHAR(255) NULL,
+  esDesactivado TINYINT NOT NULL DEFAULT 0,
+  fechaCreacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  usuarioCreacion VARCHAR(100) NOT NULL,
+  fechaModificacion DATETIME NULL,
+  usuarioModificacion VARCHAR(100) NULL,
+  PRIMARY KEY (idDetalleDevolucion),
+  FOREIGN KEY (idDevolucion) REFERENCES Devolucion (idDevolucion)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (idProducto) REFERENCES Producto (idProducto)
+    ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE = InnoDB;
+
+---
+
+
+
+-- ===============================================================================================
+-- PROCEDIMIENTOS PARA USUARIO
+-- ===============================================================================================
+DELIMITER //
+CREATE PROCEDURE sp_ValidarLogin (
+    IN p_login VARCHAR(150),
+    IN p_contrasena VARCHAR(100)
+)
+BEGIN
+    SELECT u.idUsuario, u.usuario, u.correo, u.idEmpleado, e.nombre AS nombreEmpleado, u.idRol, r.nombre AS nombreRol
+    FROM Usuario u
+    INNER JOIN Empleado e ON u.idEmpleado = e.idEmpleado
+    INNER JOIN Rol r ON u.idRol = r.idRol
+    WHERE (u.usuario = p_login OR u.correo = p_login)
+      AND u.contrasena = SHA2(p_contrasena, 256)
+      AND u.esDesactivado = 0;
+END //
+DELIMITER ;
+
+-- ===============================================================================================
+-- PROCEDIMIENTOS DE CONTEO
+-- ===============================================================================================
+
+-- Total de productos activos
+DELIMITER $$
+
+CREATE PROCEDURE sp_total_productos()
+BEGIN
+    SELECT COUNT(*) AS totalStock
+    FROM Producto
+    WHERE esDesactivado = 0;
+END$$
+
+DELIMITER ;
+
+-- Total de proveedores activos
+DELIMITER $$
+
+CREATE PROCEDURE sp_total_proveedores()
+BEGIN
+    SELECT COUNT(*) AS totalProv
+    FROM Proveedor
+    WHERE esDesactivado = 0;
+END$$
+
+DELIMITER ;
+
+
+-- Total de usuarios activos
+DELIMITER $$
+
+CREATE PROCEDURE sp_total_usuarios()
+BEGIN
+    SELECT COUNT(*) AS totalUser
+    FROM Usuario
+    WHERE esDesactivado = 0;
+END$$
+
+DELIMITER ;
+
+-- ===============================================================================================
+-- PROCEDIMIENTOS ALMACENADOS PARA PRODUCTOS
+-- ===============================================================================================
+
+DELIMITER //
+
+-- Procedimiento para listar productos con paginación y búsqueda
+CREATE PROCEDURE sp_listar_productos(
+    IN p_busqueda VARCHAR(255),
+    IN p_limit INT,
+    IN p_offset INT
+)
+BEGIN
+    SELECT
+        p.*, s.nombre AS subcategoria, c.nombre AS categoria, m.nombre AS marca
+    FROM producto p
+    LEFT JOIN subcategoria s ON p.idSubcategoria = s.idSubcategoria
+    LEFT JOIN marca m ON p.idMarca = m.idMarca
+    LEFT JOIN categoria c ON s.idCategoria = c.idCategoria
+    WHERE p.esDesactivado = 0 AND (p_busqueda IS NULL OR p_busqueda = '' OR p.sku LIKE CONCAT('%', p_busqueda, '%') OR p.nombre LIKE CONCAT('%', p_busqueda, '%'))
+    ORDER BY p.idProducto
+    LIMIT p_limit OFFSET p_offset;
+END //
+
+-- Procedimiento para contar productos con búsqueda
+CREATE PROCEDURE sp_contar_productos(
+    IN p_busqueda VARCHAR(255)
+)
+BEGIN
+    SELECT COUNT(*) FROM producto p
+    WHERE p.esDesactivado = 0 AND (p_busqueda IS NULL OR p_busqueda = '' OR p.sku LIKE CONCAT('%', p_busqueda, '%') OR p.nombre LIKE CONCAT('%', p_busqueda, '%'));
+END //
+
+-- Procedimiento para obtener un producto por su ID
+CREATE PROCEDURE sp_obtener_producto(
+    IN p_id INT
+)
+BEGIN
+    SELECT p.*, s.nombre AS subcategoria, s.idCategoria, m.nombre AS marca
+    FROM producto p
+    JOIN subcategoria s ON p.idSubcategoria = s.idSubcategoria
+    JOIN marca m ON p.idMarca = m.idMarca
+    WHERE p.idProducto = p_id AND p.esDesactivado = 0;
+END //
+
+-- Procedimiento para registrar un nuevo producto
+CREATE PROCEDURE sp_registrar_producto(
+    IN p_codigoBarras VARCHAR(50),
+    IN p_nombre VARCHAR(100),
+    IN p_descripcion TEXT,
+    IN p_idSubcategoria INT,
+    IN p_idMarca INT,
+    IN p_stockMinimo INT,
+    IN p_precioCosto DECIMAL(10, 2),
+    IN p_usuarioCreacion VARCHAR(100)
+)
+BEGIN
+    INSERT INTO producto (codigoBarras, nombre, descripcion, idSubcategoria, idMarca, stockMinimo, precioCosto, usuarioCreacion)
+    VALUES (p_codigoBarras, p_nombre, p_descripcion, p_idSubcategoria, p_idMarca, p_stockMinimo, p_precioCosto, p_usuarioCreacion);
+END //
+
+-- Procedimiento para actualizar un producto existente
+CREATE PROCEDURE sp_actualizar_producto(
+    IN p_idProducto INT,
+    IN p_codigoBarras VARCHAR(50),
+    IN p_nombre VARCHAR(100),
+    IN p_descripcion TEXT,
+    IN p_idSubcategoria INT,
+    IN p_idMarca INT,
+    IN p_stockMinimo INT,
+    IN p_precioCosto DECIMAL(10, 2),
+    IN p_usuarioModificacion VARCHAR(100)
+)
+BEGIN
+    UPDATE producto SET
+        codigoBarras = p_codigoBarras,
+        nombre = p_nombre,
+        descripcion = p_descripcion,
+        idSubcategoria = p_idSubcategoria,
+        idMarca = p_idMarca,
+        stockMinimo = p_stockMinimo,
+        precioCosto = p_precioCosto,
+        usuarioModificacion = p_usuarioModificacion,
+        fechaModificacion = NOW()
+    WHERE idProducto = p_idProducto;
+END //
+
+-- Procedimiento para eliminar LOGICAMENTE un producto
+DELIMITER //
+CREATE PROCEDURE sp_eliminar_producto(
+    IN p_idProducto INT,
+    IN p_usuarioModificacion VARCHAR(100)
+)
+BEGIN
+    UPDATE producto 
+    SET 
+        esDesactivado = 1,
+        fechaModificacion = NOW(),
+        usuarioModificacion = p_usuarioModificacion
+    WHERE idProducto = p_idProducto;
+END //
+DELIMITER ;
+
+
+
+-- ===============================================================================================
+-- PROCEDIMIENTOS ALMACENADOS PARA CATEGORIAS
+-- ===============================================================================================
+
+-- Procedimiento para registrar una nueva categoría
+DELIMITER //
+CREATE PROCEDURE sp_registrar_categoria(
+    IN p_codigo VARCHAR(20),
+    IN p_nombre VARCHAR(100),
+    IN p_usuarioCreacion VARCHAR(100)
+)
+BEGIN
+    INSERT INTO Categoria (codigo, nombre, usuarioCreacion)
+    VALUES (p_codigo, p_nombre, p_usuarioCreacion);
+END //
+DELIMITER ;
+
+-- Procedimiento para actualizar una categoría existente
+DELIMITER //
+CREATE PROCEDURE sp_actualizar_categoria(
+    IN p_idCategoria INT,
+    IN p_codigo VARCHAR(20),
+    IN p_nombre VARCHAR(100),
+    IN p_usuarioModificacion VARCHAR(100)
+)
+BEGIN
+    UPDATE Categoria SET
+        codigo = p_codigo,
+        nombre = p_nombre,
+        usuarioModificacion = p_usuarioModificacion,
+        fechaModificacion = NOW()
+    WHERE idCategoria = p_idCategoria;
+END //
+DELIMITER ;
+
+-- Procedimiento para eliminar (desactivar) una categoría
+DELIMITER //
+CREATE PROCEDURE sp_eliminar_categoria(
+    IN p_idCategoria INT,
+    IN p_usuarioModificacion VARCHAR(100)
+)
+BEGIN
+    UPDATE Categoria 
+    SET 
+        esDesactivado = 1,
+        fechaModificacion = NOW(),
+        usuarioModificacion = p_usuarioModificacion
+    WHERE idCategoria = p_idCategoria;
+END //
+DELIMITER ;
+
+-- Procedimiento para listar categorías con paginación y búsqueda
+DELIMITER //
+CREATE PROCEDURE sp_listar_categorias_paginado(
+    IN p_busqueda VARCHAR(255),
+    IN p_limit INT,
+    IN p_offset INT
+)
+BEGIN
+    SELECT * FROM Categoria
+    WHERE esDesactivado = 0 AND (p_busqueda IS NULL OR p_busqueda = '' OR nombre LIKE CONCAT('%', p_busqueda, '%') OR codigo LIKE CONCAT('%', p_busqueda, '%'))
+    ORDER BY nombre
+    LIMIT p_limit OFFSET p_offset;
+END //
+DELIMITER ;
+
+-- Procedimiento para contar categorías con búsqueda
+DELIMITER //
+CREATE PROCEDURE sp_contar_categorias(
+    IN p_busqueda VARCHAR(255)
+)
+BEGIN
+    SELECT COUNT(*) FROM Categoria WHERE esDesactivado = 0
+        AND (p_busqueda IS NULL OR p_busqueda = '' OR nombre LIKE CONCAT('%', p_busqueda, '%') OR codigo LIKE CONCAT('%', p_busqueda, '%'));
+END //
+DELIMITER ;
+
+-- Procedimiento para listar categorías
+DELIMITER //
+CREATE PROCEDURE sp_listar_categorias()
+BEGIN
+    SELECT * FROM Categoria WHERE esDesactivado = 0;
+END //
+DELIMITER ;
+
+-- Procedimiento para obtener una categoría por ID
+DELIMITER //
+CREATE PROCEDURE sp_obtener_categoria_por_id(IN p_idCategoria INT)
+BEGIN
+    SELECT * FROM Categoria WHERE idCategoria = p_idCategoria;
+END //
+DELIMITER ;
+
+-- ===============================================================================================
+-- PROCEDIMIENTOS ALMACENADOS PARA MARCAS
+-- ===============================================================================================
+
+-- Procedimiento para registrar una nueva marca
+DELIMITER //
+CREATE PROCEDURE sp_registrar_marca(
+    IN p_nombre VARCHAR(100),
+    IN p_usuarioCreacion VARCHAR(100)
+)
+BEGIN
+    INSERT INTO marca (nombre, usuarioCreacion)
+    VALUES (p_nombre, p_usuarioCreacion);
+END //
+DELIMITER ;
+
+-- Procedimiento para actualizar una marca existente
+DELIMITER //
+CREATE PROCEDURE sp_actualizar_marca(
+    IN p_idMarca INT,
+    IN p_nombre VARCHAR(100),
+    IN p_usuarioModificacion VARCHAR(100)
+)
+BEGIN
+    UPDATE marca SET
+        nombre = p_nombre,
+        usuarioModificacion = p_usuarioModificacion,
+        fechaModificacion = NOW()
+    WHERE idMarca = p_idMarca;
+END //
+DELIMITER ;
+
+-- Procedimiento para eliminar una marca
+DELIMITER //
+CREATE PROCEDURE sp_eliminar_marca(
+    IN p_idMarca INT,
+    IN p_usuarioModificacion VARCHAR(100)
+)
+BEGIN
+    UPDATE marca
+    SET 
+        esDesactivado = 1,
+        fechaModificacion = NOW(),
+        usuarioModificacion = p_usuarioModificacion
+    WHERE idMarca = p_idMarca;
+END //
+DELIMITER ;
+
+-- Procedimiento para listar marcas con paginación y búsqueda
+DELIMITER //
+CREATE PROCEDURE sp_listar_marcas_paginado(
+    IN p_busqueda VARCHAR(255),
+    IN p_limit INT,
+    IN p_offset INT
+)
+BEGIN
+    SELECT * FROM marca
+    WHERE p_busqueda IS NULL OR p_busqueda = '' OR nombre LIKE CONCAT('%', p_busqueda, '%')
+    ORDER BY nombre
+    LIMIT p_limit OFFSET p_offset;
+END //
+DELIMITER ;
+
+-- Procedimiento para contar marcas con búsqueda
+DELIMITER //
+CREATE PROCEDURE sp_contar_marcas(
+    IN p_busqueda VARCHAR(255)
+)
+BEGIN
+    SELECT COUNT(*) FROM marca
+    WHERE p_busqueda IS NULL OR p_busqueda = '' OR nombre LIKE CONCAT('%', p_busqueda, '%');
+END //
+DELIMITER ;
+
+-- Procedimiento para obtener una marca por su ID
+DELIMITER //
+CREATE PROCEDURE sp_obtener_marca_por_id(
+    IN p_idMarca INT
+)
+BEGIN
+    SELECT * FROM marca WHERE idMarca = p_idMarca;
+END //
+DELIMITER ;
+
+
+-- Procedimiento para listar marcas
+DELIMITER //
+CREATE PROCEDURE sp_listar_marcas()
+BEGIN
+    SELECT * FROM marca;
+END //
+DELIMITER ;
+
+-- ========================================================================================================================
+-- PROCEDIMIENTOS ALMACENADOS PARA SUBCATEGORÍAS
+-- ========================================================================================================================
+
+-- Procedimiento para registrar una nueva subcategoría
+DELIMITER //
+CREATE PROCEDURE sp_registrar_subcategoria(
+    IN p_codigo VARCHAR(50),
+    IN p_nombre VARCHAR(100),
+    IN p_idCategoria INT,
+    IN p_usuarioCreacion VARCHAR(100)
+)
+BEGIN
+    INSERT INTO subcategoria (codigo, nombre, idCategoria, usuarioCreacion)
+    VALUES (p_codigo, p_nombre, p_idCategoria, p_usuarioCreacion);
+END //
+DELIMITER ;
+
+-- Procedimiento para actualizar una subcategoría existente
+DELIMITER //
+CREATE PROCEDURE sp_actualizar_subcategoria(
+    IN p_idSubcategoria INT,
+    IN p_codigo VARCHAR(50),
+    IN p_nombre VARCHAR(100),
+    IN p_idCategoria INT,
+    IN p_usuarioModificacion VARCHAR(100)
+)
+BEGIN
+    UPDATE subcategoria SET
+        codigo = p_codigo,
+        nombre = p_nombre,
+        idCategoria = p_idCategoria,
+        usuarioModificacion = p_usuarioModificacion,
+        fechaModificacion = NOW()
+    WHERE idSubcategoria = p_idSubcategoria;
+END //
+DELIMITER ;
+
+-- Procedimiento para eliminar (desactivar) una subcategoría
+DELIMITER //
+CREATE PROCEDURE sp_eliminar_subcategoria(
+    IN p_idSubcategoria INT,
+    IN p_usuarioModificacion VARCHAR(100)
+)
+BEGIN
+    UPDATE subcategoria 
+    SET 
+        esDesactivado = 1,
+        fechaModificacion = NOW(),
+        usuarioModificacion = p_usuarioModificacion
+    WHERE idSubcategoria = p_idSubcategoria;
+END //
+DELIMITER ;
+
+-- Procedimiento para listar subcategorías con paginación y búsqueda
+DELIMITER //
+CREATE PROCEDURE sp_listar_subcategorias_paginado(
+    IN p_busqueda VARCHAR(255),
+    IN p_limit INT,
+    IN p_offset INT
+)
+BEGIN
+    SELECT sc.*, c.nombre as categoria  FROM subcategoria sc
+    JOIN categoria c ON sc.idCategoria = c.idCategoria
+    WHERE sc.esDesactivado = 0
+      AND (p_busqueda IS NULL OR p_busqueda = '' OR sc.nombre LIKE CONCAT('%', p_busqueda, '%') OR sc.codigo LIKE CONCAT('%', p_busqueda, '%'))
+    ORDER BY sc.idSubcategoria
+    LIMIT p_limit OFFSET p_offset;
+END //
+DELIMITER ;
+
+-- Procedimiento para contar subcategorías con búsqueda
+DELIMITER //
+CREATE PROCEDURE sp_contar_subcategorias(
+    IN p_busqueda VARCHAR(255)
+)
+BEGIN
+    SELECT COUNT(*) FROM subcategoria  WHERE esDesactivado = 0 
+      AND (p_busqueda IS NULL OR p_busqueda = '' OR nombre LIKE CONCAT('%', p_busqueda, '%') OR codigo LIKE CONCAT('%', p_busqueda, '%'));
+END //
+DELIMITER ;
+
+-- Procedimiento para obtener una subcategoría por su ID
+DELIMITER //
+CREATE PROCEDURE sp_obtener_subcategoria_por_id(
+    IN p_id INT
+)
+BEGIN
+    SELECT sc.*, c.nombre as categoria 
+    FROM subcategoria sc 
+    JOIN categoria c ON sc.idCategoria = c.idCategoria
+    WHERE sc.idSubcategoria = p_id;
+END //
+DELIMITER ;
+
+
+-- Procedimiento para listar subcategorías
+DELIMITER //
+CREATE PROCEDURE sp_listar_subcategorias()
+BEGIN
+    SELECT * FROM Subcategoria WHERE esDesactivado = 0;
+END //
+DELIMITER ;
+
+-- Procedimiento para listar subcategorías por categoría
+DELIMITER //
+CREATE PROCEDURE sp_listar_subcategorias_por_categoria(IN p_idCategoria INT)
+BEGIN
+    SELECT * FROM Subcategoria WHERE idCategoria = p_idCategoria AND esDesactivado = 0;
+END //
+DELIMITER ;
+
+
+-- SP para listar proveedores con búsqueda y paginación
+DELIMITER //
+CREATE PROCEDURE sp_listar_proveedores_paginado(
+    IN p_termino VARCHAR(255),
+    IN p_limit INT,
+    IN p_offset INT
+)
+BEGIN
+    SELECT idProveedor, numeroDocumento, razonSocial, nombreComercial, contacto, telefono, direccion
+    FROM Proveedor
+    WHERE esDesactivado = 0
+      AND (razonSocial LIKE CONCAT('%', p_termino, '%') OR numeroDocumento LIKE CONCAT('%', p_termino, '%'))
+    ORDER BY idProveedor DESC
+    LIMIT p_limit OFFSET p_offset;
+END //
+DELIMITER ;
+
+-- SP para contar proveedores (para paginación)
+DELIMITER //
+CREATE PROCEDURE sp_contar_proveedores(
+    IN p_termino VARCHAR(255)
+)
+BEGIN
+    SELECT COUNT(*) 
+    FROM Proveedor
+    WHERE esDesactivado = 0
+      AND (razonSocial LIKE CONCAT('%', p_termino, '%') OR numeroDocumento LIKE CONCAT('%', p_termino, '%'));
+END //
+DELIMITER ;
+
+-- SP para obtener un proveedor por ID
+DELIMITER //
+CREATE PROCEDURE sp_obtener_proveedor_por_id(
+    IN p_id INT
+)
+BEGIN
+    SELECT idProveedor, numeroDocumento, razonSocial, nombreComercial, contacto, telefono, direccion
+    FROM Proveedor
+    WHERE idProveedor = p_id
+      AND esDesactivado = 0;
+END //
+DELIMITER ;
+
+-- SP para registrar un nuevo proveedor
+DELIMITER //
+CREATE PROCEDURE sp_registrar_proveedor(
+    IN p_numeroDocumento VARCHAR(50),
+    IN p_razonSocial VARCHAR(150),
+    IN p_nombreComercial VARCHAR(150),
+    IN p_contacto VARCHAR(100),
+    IN p_telefono VARCHAR(50),
+    IN p_direccion TEXT,
+    IN p_usuarioCreacion VARCHAR(100)
+)
+BEGIN
+    INSERT INTO Proveedor (numeroDocumento, razonSocial, nombreComercial, contacto, telefono, direccion, usuarioCreacion)
+    VALUES (p_numeroDocumento, p_razonSocial, p_nombreComercial, p_contacto, p_telefono, p_direccion, p_usuarioCreacion);
+END //
+DELIMITER ;
+
+-- SP para actualizar un proveedor
+DELIMITER //
+CREATE PROCEDURE sp_actualizar_proveedor(
+    IN p_idProveedor INT,
+    IN p_numeroDocumento VARCHAR(50),
+    IN p_razonSocial VARCHAR(150),
+    IN p_nombreComercial VARCHAR(150),
+    IN p_contacto VARCHAR(100),
+    IN p_telefono VARCHAR(50),
+    IN p_direccion TEXT,
+    IN p_usuarioModificacion VARCHAR(100)
+)
+BEGIN
+    UPDATE Proveedor
+    SET numeroDocumento = p_numeroDocumento,
+        razonSocial = p_razonSocial,
+        nombreComercial = p_nombreComercial,
+        contacto = p_contacto,
+        telefono = p_telefono,
+        direccion = p_direccion,
+        usuarioModificacion = p_usuarioModificacion,
+        fechaModificacion = NOW()
+    WHERE idProveedor = p_idProveedor;
+END //
+DELIMITER ;
+
+-- SP para eliminar un proveedor (solo marcamos como desactivado)
+DELIMITER //
+CREATE PROCEDURE sp_eliminar_proveedor(
+    IN p_idProveedor INT,
+    IN p_usuarioModificacion VARCHAR(100)
+)
+BEGIN
+    UPDATE Proveedor
+    SET 
+        esDesactivado = 1,
+        fechaModificacion = NOW(),
+        usuarioModificacion = p_usuarioModificacion
+    WHERE idProveedor = p_idProveedor;
+END //
+DELIMITER ;
+
+-- listar usuarios con búsqueda, paginación y joins
+DELIMITER $$
+CREATE PROCEDURE sp_listarUsuarios(
+    IN pTerminoBusqueda VARCHAR(100),
+    IN pLimit INT,
+    IN pOffset INT
+)
+BEGIN
+    SELECT u.idUsuario, u.usuario, u.correo, r.nombre AS rol, e.nombre AS empleado
+    FROM Usuario u
+    LEFT JOIN Rol r ON u.idRol = r.idRol
+    LEFT JOIN Empleado e ON u.idEmpleado = e.idEmpleado
+    WHERE u.esDesactivado = 0  -- Agrega esta condición para la eliminación lógica
+      AND (u.usuario LIKE CONCAT('%', pTerminoBusqueda, '%')
+        OR u.correo LIKE CONCAT('%', pTerminoBusqueda, '%'))
+    ORDER BY u.idUsuario ASC
+    LIMIT pLimit OFFSET pOffset;
+END$$
+DELIMITER ;
+
+-- contar usuarios
+DELIMITER $$
+
+CREATE PROCEDURE sp_contarUsuarios(
+    IN pTerminoBusqueda VARCHAR(100)
+)
+BEGIN
+    SELECT COUNT(*) AS total
+    FROM Usuario
+    WHERE usuario LIKE CONCAT('%', pTerminoBusqueda, '%')
+       OR correo LIKE CONCAT('%', pTerminoBusqueda, '%');
+END$$
+
+DELIMITER ;
+
+-- eliminar usuario
+DELIMITER //
+
+CREATE PROCEDURE sp_eliminarUsuario(
+    IN pIdUsuario INT,
+    IN pUsuarioModificacion VARCHAR(100)
+)
+BEGIN
+    UPDATE Usuario
+    SET 
+        esDesactivado = 1,
+        fechaModificacion = NOW(),
+        usuarioModificacion = pUsuarioModificacion
+    WHERE idUsuario = pIdUsuario;
+END //
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE sp_gestionar_stock(
+    IN p_idProducto INT,
+    IN p_cantidad INT,
+    IN p_fechaVencimiento DATE,
+    IN p_usuarioModificacion VARCHAR(100)
+)
+BEGIN
+    DECLARE v_count INT;
+    SELECT COUNT(*) INTO v_count
+    FROM Stock
+    WHERE idProducto = p_idProducto AND fechaVencimiento <=> p_fechaVencimiento;
+
+    IF v_count > 0 THEN
+        UPDATE Stock
+        SET cantidad = cantidad + p_cantidad,
+            fechaModificacion = NOW(),
+            usuarioModificacion = p_usuarioModificacion
+        WHERE idProducto = p_idProducto AND fechaVencimiento <=> p_fechaVencimiento;
+    ELSE
+        INSERT INTO Stock (
+            idProducto,
+            cantidad,
+            fechaVencimiento,
+            usuarioCreacion
+        ) VALUES (
+            p_idProducto,
+            p_cantidad,
+            p_fechaVencimiento,
+            p_usuarioModificacion
+        );
+    END IF;
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE sp_obtener_reporte_stock()
+BEGIN
+    SELECT
+        p.idProducto,
+        p.nombre AS nombreProducto,
+        p.sku,
+        p.codigoBarras,
+        p.stockMinimo,
+        s.cantidad,
+        s.fechaVencimiento,
+        c.nombre AS nombreCategoria,
+        sub.nombre AS nombreSubcategoria,
+        m.nombre AS nombreMarca
+    FROM Stock s
+    INNER JOIN Producto p ON s.idProducto = p.idProducto
+    LEFT JOIN Subcategoria sub ON p.idSubcategoria = sub.idSubcategoria
+    LEFT JOIN Categoria c ON sub.idCategoria = c.idCategoria
+    LEFT JOIN Marca m ON p.idMarca = m.idMarca
+    WHERE s.esDesactivado = 0
+    ORDER BY p.nombre ASC;
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE sp_obtener_productos_bajo_stock()
+BEGIN
+    SELECT
+        p.idProducto,
+        p.nombre,
+        p.sku,
+        p.stockMinimo,
+        SUM(s.cantidad) AS stockTotal
+    FROM
+        Producto p
+    INNER JOIN
+        Stock s ON p.idProducto = s.idProducto
+    WHERE
+        p.esDesactivado = 0
+    GROUP BY
+        p.idProducto, p.nombre, p.sku, p.stockMinimo
+    HAVING
+        stockTotal <= p.stockMinimo
+    ORDER BY
+        p.nombre ASC;
+END //
+
+DELIMITER ;
+
+
+
+-- ========================================================================================================================
+-- PROCEDIMIENTOS ALMACENADOS PARA TIENDA
+-- ========================================================================================================================
+
+-- SP_InsertarTienda
+DELIMITER //
+CREATE PROCEDURE SP_InsertarTienda(
+    IN p_idDistrito INT,
+    IN p_nombre VARCHAR(100),
+    IN p_direccion VARCHAR(255),
+    IN p_telefono VARCHAR(20),
+    IN p_usuarioCreacion VARCHAR(100)
+)
+BEGIN
+    INSERT INTO Tienda (idDistrito, nombre, direccion, telefono, usuarioCreacion)
+    VALUES (p_idDistrito, p_nombre, p_direccion, p_telefono, p_usuarioCreacion);
+END //
+DELIMITER ;
+
+
+-- SP_ListarTiendas
+DELIMITER //
+CREATE PROCEDURE SP_ListarTiendas()
+BEGIN
+    SELECT 
+        T.idTienda, 
+        T.nombre, 
+        T.direccion, 
+        T.telefono, 
+        D.nombre AS Distrito,
+        P.nombre AS Provincia,
+        DEP.nombre AS Departamento
+    FROM Tienda T
+    INNER JOIN Distrito D ON T.idDistrito = D.idDistrito
+    INNER JOIN Provincia P ON D.idProvincia = P.idProvincia
+    INNER JOIN Departamento DEP ON P.idDepartamento = DEP.idDepartamento
+    WHERE T.esDesactivado = 0
+    ORDER BY T.nombre ASC;
+END //
+DELIMITER ;
+
+-- SP_ActualizarTienda
+DELIMITER //
+CREATE PROCEDURE SP_ActualizarTienda(
+    IN p_idTienda INT,
+    IN p_idDistrito INT,
+    IN p_nombre VARCHAR(100),
+    IN p_direccion VARCHAR(255),
+    IN p_telefono VARCHAR(20),
+    IN p_esDesactivado TINYINT,
+    IN p_usuarioModificacion VARCHAR(100)
+)
+BEGIN
+    UPDATE Tienda
+    SET 
+        idDistrito = p_idDistrito,
+        nombre = p_nombre,
+        direccion = p_direccion,
+        telefono = p_telefono,
+        esDesactivado = p_esDesactivado,
+        fechaModificacion = NOW(),
+        usuarioModificacion = p_usuarioModificacion
+    WHERE idTienda = p_idTienda;
+END //
+DELIMITER ;
+
+-- ========================================================================================================================
+-- PROCEDIMIENTOS ALMACENADOS PARA UBIGEO
+-- ========================================================================================================================
+
+-- SP_ObtenerDepartamentos
+DELIMITER //
+CREATE PROCEDURE SP_ObtenerDepartamentos()
+BEGIN
+    SELECT idDepartamento, nombre 
+    FROM Departamento 
+    WHERE esDesactivado = 0 
+    ORDER BY nombre ASC;
+END //
+DELIMITER ;
+
+-- SP_ObtenerProvinciasPorDepartamento
+DELIMITER //
+CREATE PROCEDURE SP_ObtenerProvinciasPorDepartamento(
+    IN p_idDepartamento VARCHAR(4)
+)
+BEGIN
+    SELECT idProvincia, nombre 
+    FROM Provincia 
+    WHERE idDepartamento = p_idDepartamento 
+    AND esDesactivado = 0 
+    ORDER BY nombre ASC;
+END //
+DELIMITER ;
+-- SP_ObtenerDistritosPorProvincia
+DELIMITER //
+CREATE PROCEDURE SP_ObtenerDistritosPorProvincia(
+    IN p_idProvincia VARCHAR(6)
+)
+BEGIN
+    SELECT idDistrito, nombre 
+    FROM Distrito 
+    WHERE idProvincia = p_idProvincia 
+    AND esDesactivado = 0 
+    ORDER BY nombre ASC;
+END //
+DELIMITER ;
+
+
+
+
+
+DELIMITER //
+
+CREATE PROCEDURE SP_RegistrarMovimiento (
+    IN p_idTipoMovimiento INT,
+    IN p_idUsuario INT,
+    IN p_documentoReferenciaId INT,
+    IN p_usuarioCreacion VARCHAR(100),
+    OUT p_idMovimiento INT
+)
+BEGIN
+    INSERT INTO Movimiento (
+        idTipoMovimiento,
+        idUsuario,
+        documentoReferenciaId,
+        usuarioCreacion
+    ) VALUES (
+        p_idTipoMovimiento,
+        p_idUsuario,
+        p_documentoReferenciaId,
+        p_usuarioCreacion
+    );
+    SET p_idMovimiento = LAST_INSERT_ID();
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE SP_RegistrarDetalleTraslado (
+    IN p_idTraslado INT,
+    IN p_idProducto INT,
+    IN p_cantidad INT,
+    IN p_observacion VARCHAR(255),
+    IN p_usuarioCreacion VARCHAR(100)
+)
+BEGIN
+    INSERT INTO DetalleTraslado (
+        idTraslado,
+        idProducto,
+        cantidad,
+        observacion,
+        usuarioCreacion
+    ) VALUES (
+        p_idTraslado,
+        p_idProducto,
+        p_cantidad,
+        p_observacion,
+        p_usuarioCreacion
+    );
+END //
+
+DELIMITER //
+
+CREATE PROCEDURE SP_RegistrarEncabezadoTraslado (
+    IN p_destino VARCHAR(100),
+    IN p_idUsuario INT,
+    IN p_usuarioCreacion VARCHAR(100),
+    OUT p_idTraslado INT
+)
+BEGIN
+    INSERT INTO Traslado (
+        destino,
+        idUsuario,
+        usuarioCreacion
+    ) VALUES (
+        p_destino,
+        p_idUsuario,
+        p_usuarioCreacion
+    );
+
+    SET p_idTraslado = LAST_INSERT_ID();
+END //
+
+DELIMITER ;
+
+
+
+
+DELIMITER //
+
+CREATE PROCEDURE SP_SalidaStock_PrimerVencimiento (
+    IN p_idTipoMovimiento INT,
+    IN p_idUsuario INT,
+    IN p_documentoReferenciaId INT,
+    IN p_idProducto INT,
+    IN p_cantidadRequerida INT,
+    IN p_usuarioCreacion VARCHAR(100)
+)
+BEGIN
+    DECLARE v_cantidadPendiente INT;
+    DECLARE v_idStockLote INT;
+    DECLARE v_cantidadDisponible INT;
+    DECLARE v_cantidadATomar INT;
+    DECLARE v_costoUnitario DECIMAL(10,2);
+    DECLARE v_idMovimiento INT;
+    DECLARE done INT DEFAULT FALSE; 
+
+    DECLARE lote_cursor CURSOR FOR 
+        SELECT idStock, cantidad 
+        FROM Stock 
+        WHERE idProducto = p_idProducto AND cantidad > 0 AND esDesactivado = 0
+        ORDER BY fechaVencimiento ASC, fechaRecepcion ASC; 
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    CALL SP_RegistrarMovimiento(
+        p_idTipoMovimiento,
+        p_idUsuario,
+        p_documentoReferenciaId,
+        p_usuarioCreacion,
+        v_idMovimiento
+    );
+
+    SELECT SUM(cantidad) INTO @total_stock 
+    FROM Stock 
+    WHERE idProducto = p_idProducto AND esDesactivado = 0;
+
+    IF @total_stock IS NULL OR @total_stock < p_cantidadRequerida THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: Stock total insuficiente para la salida requerida.';
+    END IF;
+
+    SET v_cantidadPendiente = p_cantidadRequerida;
+    
+    OPEN lote_cursor;
+    read_loop: LOOP
+        FETCH lote_cursor INTO v_idStockLote, v_cantidadDisponible;
+        
+        IF done OR v_cantidadPendiente <= 0 THEN
+            LEAVE read_loop;
+        END IF;
+
+        SET v_cantidadATomar = LEAST(v_cantidadPendiente, v_cantidadDisponible);
+
+        SELECT precioUnitario INTO v_costoUnitario
+        FROM DetalleMovimiento
+        WHERE idStockAfectado = v_idStockLote
+        ORDER BY fechaCreacion DESC
+        LIMIT 1;
+
+        UPDATE Stock 
+        SET 
+            cantidad = cantidad - v_cantidadATomar, 
+            usuarioModificacion = p_usuarioCreacion, 
+            fechaModificacion = NOW()
+        WHERE idStock = v_idStockLote;
+
+        INSERT INTO DetalleMovimiento (
+            idMovimiento, idProducto, cantidad, precioUnitario, idStockAfectado, usuarioCreacion
+        ) VALUES (
+            v_idMovimiento, p_idProducto, v_cantidadATomar, v_costoUnitario, v_idStockLote, p_usuarioCreacion
+        );
+
+        SET v_cantidadPendiente = v_cantidadPendiente - v_cantidadATomar;
+        
+    END LOOP read_loop;
+
+    CLOSE lote_cursor;
+
+    IF v_cantidadPendiente > 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error grave: Fallo en el consumo de lotes (la cantidad pendiente es mayor a 0).';
+    END IF;
+
+    SELECT v_idMovimiento AS idMovimiento;
+
+END //
+
+DELIMITER ;
+
+
+-- ============================================================================
+-- 					DESCARTE
+-- ============================================================================
+
+DELIMITER //
+
+CREATE PROCEDURE SP_RegistrarEncabezadoDescarte (
+    IN p_razon VARCHAR(255),
+    IN p_idUsuario INT,
+    IN p_fechaEvento DATETIME,
+    IN p_usuarioCreacion VARCHAR(100),
+    OUT p_idDescarte INT
+)
+BEGIN
+    INSERT INTO Descarte (
+        fechaEvento,
+        idUsuario,
+        razon,
+        usuarioCreacion
+    ) VALUES (
+        p_fechaEvento,
+        p_idUsuario,
+        p_razon,
+        p_usuarioCreacion
+    );
+
+    SET p_idDescarte = LAST_INSERT_ID();
+END //
+
+DELIMITER ;
+
+
+DELIMITER //
+
+CREATE PROCEDURE SP_RegistrarDetalleDescarte (
+    IN p_idDescarte INT,
+    IN p_idProducto INT,
+    IN p_cantidad INT,
+    IN p_observacion VARCHAR(255), -- Este argumento se recibe del PHP
+    IN p_usuarioCreacion VARCHAR(100)
+)
+BEGIN
+    INSERT INTO DetalleDescarte (
+        idDescarte,
+        idProducto,
+        cantidad,
+        usuarioCreacion
+    ) VALUES (
+        p_idDescarte,
+        p_idProducto,
+        p_cantidad,
+        p_usuarioCreacion
+    );
+END //
+
+DELIMITER ;
+
+
+
+-- SP_BuscarProductosConStock
+DELIMITER //
+
+CREATE PROCEDURE SP_BuscarProductosConStock(
+    IN p_termino VARCHAR(100)
+)
+BEGIN
+    SELECT 
+        P.idProducto, 
+        P.nombre, 
+        P.sku,
+        COALESCE(SUM(S.cantidad), 0) AS stockTotal 
+    FROM Producto P
+    LEFT JOIN Stock S ON P.idProducto = S.idProducto
+    WHERE 
+        P.esDesactivado = 0 AND 
+        (P.nombre LIKE CONCAT('%', p_termino, '%') OR P.sku LIKE CONCAT('%', p_termino, '%'))
+    GROUP BY P.idProducto, P.nombre, P.sku
+    HAVING stockTotal > 0
+    ORDER BY P.nombre ASC
+    LIMIT 10;
+END //
+
+DELIMITER ;
+
+
+
+
+-- -----------------------------------------------------
+-- SP_RegistrarEncabezadoDevolucion
+-- -----------------------------------------------------
+DELIMITER //
+
+CREATE PROCEDURE SP_RegistrarEncabezadoDevolucion(
+    IN p_documentoReferencia VARCHAR(50),
+    IN p_motivo VARCHAR(255),
+    IN p_idUsuario INT,
+    IN p_usuarioCreacion VARCHAR(100),
+    OUT p_idDevolucion INT
+)
+BEGIN
+    INSERT INTO Devolucion (documentoReferencia, motivo, idUsuario, usuarioCreacion)
+    VALUES (p_documentoReferencia, p_motivo, p_idUsuario, p_usuarioCreacion);
+    
+    SET p_idDevolucion = LAST_INSERT_ID();
+END //
+
+DELIMITER ;
+
+-- -----------------------------------------------------
+-- SP_RegistrarDetalleDevolucion
+-- -----------------------------------------------------
+DELIMITER //
+
+CREATE PROCEDURE SP_RegistrarDetalleDevolucion(
+    IN p_idDevolucion INT,
+    IN p_idProducto INT,
+    IN p_cantidad INT,
+    IN p_observacion VARCHAR(255),
+    IN p_usuarioCreacion VARCHAR(100)
+)
+BEGIN
+    INSERT INTO DetalleDevolucion (idDevolucion, idProducto, cantidad, observacion, usuarioCreacion)
+    VALUES (p_idDevolucion, p_idProducto, p_cantidad, p_observacion, p_usuarioCreacion);
+END //
+
+DELIMITER ;
+
+
+-- -----------------------------------------------------
+-- PEDIDOS
+-- -----------------------------------------------------
+DELIMITER //
+
+CREATE PROCEDURE SP_CrearEncabezadoPedido(
+    IN p_idProveedor INT,
+    IN p_idUsuario INT,
+    IN p_usuarioCreacion VARCHAR(100),
+    OUT p_idPedido INT
+)
+BEGIN
+    INSERT INTO Pedido (idProveedor, idEstado, idUsuario, usuarioCreacion)
+    VALUES (p_idProveedor, 1, p_idUsuario, p_usuarioCreacion);
+    
+    SET p_idPedido = LAST_INSERT_ID();
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE SP_CrearDetallePedido(
+    IN p_idPedido INT,
+    IN p_idProducto INT,
+    IN p_cantidad INT,
+    IN p_costoUnitario DECIMAL(10,2),
+    IN p_fechaVencimiento DATE,
+    IN p_usuarioCreacion VARCHAR(100)
+)
+BEGIN
+    INSERT INTO DetallePedido (idPedido, idProducto, cantidad, costoUnitario, fechaVencimiento, usuarioCreacion)
+    VALUES (p_idPedido, p_idProducto, p_cantidad, p_costoUnitario, p_fechaVencimiento, p_usuarioCreacion);
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE SP_ListarTodosPedidos()
+BEGIN
+    SELECT 
+        p.idPedido,
+        p.fecha,
+        p.idProveedor,
+        prov.razonSocial AS nombreProveedor,
+        p.idEstado,
+        ep.nombreEstado AS estado,
+        p.fechaCreacion
+    FROM Pedido p
+    JOIN Proveedor prov ON p.idProveedor = prov.idProveedor
+    JOIN EstadoPedido ep ON p.idEstado = ep.idEstado
+    WHERE p.esDesactivado = 0
+    ORDER BY p.idPedido DESC;
+END //
+
+DELIMITER ;
+
+-- -----------------------------------------------------
+-- recepcion
+-- -----------------------------------------------------
+
+
+DELIMITER //
+CREATE PROCEDURE SP_ActualizarDetalleRecepcion(
+    IN p_idDetalle INT,
+    IN p_cantidadRecibida INT,
+    IN p_costoUnitario DECIMAL(10, 2),
+    IN p_fechaVencimiento DATE,
+    IN p_usuarioModificacion VARCHAR(100)
+)
+BEGIN
+    UPDATE DetallePedido
+    SET 
+        cantidadRecibida = p_cantidadRecibida,
+        costoUnitario = p_costoUnitario,
+        fechaVencimiento = p_fechaVencimiento,
+        fechaModificacion = NOW(),
+        usuarioModificacion = p_usuarioModificacion
+    WHERE idDetalle = p_idDetalle;
+END
+
+
+CREATE PROCEDURE SP_ObtenerDetallesRecepcion(
+    IN p_idPedido INT
+)
+BEGIN
+    SELECT 
+        dp.idProducto,
+        dp.cantidadRecibida AS cantidad,
+        dp.costoUnitario AS costo,
+        dp.fechaVencimiento
+    FROM DetallePedido dp
+    WHERE dp.idPedido = p_idPedido AND dp.cantidadRecibida > 0;
+END
+
+
+
+CREATE PROCEDURE SP_ObtenerDetallePedidoParaRecepcion(
+    IN p_idPedido INT
+)
+BEGIN
+    SELECT 
+        p.idPedido,
+        prov.razonSocial AS nombreProveedor,
+        p.fechaCreacion,
+        dp.idDetalle,
+        dp.idProducto,
+        prod.nombre AS nombreProducto,
+        dp.cantidadPedida,
+        dp.costoUnitario
+    FROM Pedido p
+    JOIN Proveedor prov ON p.idProveedor = prov.idProveedor
+    JOIN DetallePedido dp ON p.idPedido = dp.idPedido
+    JOIN Producto prod ON dp.idProducto = prod.idProducto
+    WHERE p.idPedido = p_idPedido AND p.idEstado = 1;
+END
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE SP_ObtenerDetallesPedido(
+    IN p_idPedido INT
+)
+BEGIN
+    -- 1. Obtener la información del encabezado del pedido
+    SELECT 
+        p.idPedido,
+        p.fecha,
+        p.idProveedor,
+        prov.razonSocial AS nombreProveedor,
+        p.idEstado,
+        ep.nombreEstado AS estado,
+        p.usuarioCreacion,
+        p.fechaCreacion
+    FROM Pedido p
+    JOIN Proveedor prov ON p.idProveedor = prov.idProveedor
+    JOIN EstadoPedido ep ON p.idEstado = ep.idEstado
+    WHERE p.idPedido = p_idPedido AND p.esDesactivado = 0;
+
+    -- 2. Obtener los detalles del pedido (productos)
+    SELECT 
+        dp.idDetalle,
+        dp.idProducto,
+        prod.nombre AS nombreProducto,
+        dp.cantidadPedida,
+        dp.costoUnitario AS costoInicial,
+        dp.cantidadRecibida,
+        dp.fechaVencimiento
+    FROM DetallePedido dp
+    JOIN Producto prod ON dp.idProducto = prod.idProducto
+    WHERE dp.idPedido = p_idPedido;
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+DROP PROCEDURE IF EXISTS SP_ObtenerDetallePedidoParaRecepcion;
+
+CREATE PROCEDURE SP_ObtenerDetallePedidoParaRecepcion(
+    IN p_idPedido INT
+)
+BEGIN
+    SELECT 
+        p.idPedido,
+        prov.razonSocial AS nombreProveedor,
+        p.fechaCreacion,
+        dp.idDetalle,
+        dp.idProducto,
+        prod.nombre AS nombreProducto,
+        dp.cantidad AS cantidadPedida,  -- Usa el alias para compatibilidad con PHP
+        dp.costoUnitario 
+    FROM Pedido p
+    JOIN Proveedor prov ON p.idProveedor = prov.idProveedor
+    JOIN DetallePedido dp ON p.idPedido = dp.idPedido
+    JOIN Producto prod ON dp.idProducto = prod.idProducto
+    -- El filtro de estado es correcto según tu confirmación
+    WHERE p.idPedido = p_idPedido AND p.idEstado = 1; 
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE SP_ActualizarDetalleRecepcion(
+    IN p_idDetalle INT,
+    IN p_cantidadRecibida INT,
+    IN p_costoUnitarioReal DECIMAL(10, 2),
+    IN p_fechaVencimiento DATE,
+    IN p_usuarioModificacion VARCHAR(100)
+)
+BEGIN
+    UPDATE DetallePedido
+    SET 
+        -- ATENCIÓN: Se actualiza la columna 'cantidad' con la cantidad recibida. 
+        -- Si quieres mantener la cantidad pedida, debes agregar una columna 'cantidadRecibida' a DetallePedido.
+        cantidad = p_cantidadRecibida,             
+        costoUnitario = p_costoUnitarioReal,      
+        fechaVencimiento = p_fechaVencimiento,
+        usuarioModificacion = p_usuarioModificacion,
+        fechaModificacion = NOW()
+    WHERE idDetalle = p_idDetalle;
+END //
+
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- ==================================================================================================================================================================
 -- 					DATOS BASE
--- ===========================================
+-- ==================================================================================================================================================================
 INSERT INTO TipoDocumento (IdTipoDocumento, nombre, descripcion) VALUES
 (1, 'DNI', 'Documento Nacional de Identidad'),
 (2, 'RUC', 'Registro Único de Contribuyentes');
@@ -2509,29 +3949,7 @@ INSERT INTO Categoria (idCategoria, codigo, nombre, usuarioCreacion) VALUES
 (5, 104, 'Fragancias', 'system');
 
 
-DELIMITER $$
 
-CREATE TRIGGER trg_subcategoria_codigo
-BEFORE INSERT ON Subcategoria
-FOR EACH ROW
-BEGIN
-    DECLARE v_cod_categoria INT;
-    DECLARE v_max_consecutivo INT;
-    
-    SELECT codigo INTO v_cod_categoria
-    FROM Categoria
-    WHERE idCategoria = NEW.idCategoria;
-
-    SELECT IFNULL(MAX(CAST(RIGHT(codigo, 2) AS UNSIGNED)), 0)
-    INTO v_max_consecutivo
-    FROM Subcategoria
-    WHERE idCategoria = NEW.idCategoria;
-
-    -- generar el nuevo código: [codigoCategoria][+1 en 2 dígitos]
-    SET NEW.codigo = CONCAT(v_cod_categoria, LPAD(v_max_consecutivo + 1, 2, '0'));
-END$$
-
-DELIMITER ;
 
 
 -- ===========================================
@@ -2655,29 +4073,7 @@ INSERT INTO Marca (nombre, usuarioCreacion) VALUES
 ('Tommy Hilfiger', 'system');
 
 
-DELIMITER $$
 
-CREATE TRIGGER generar_sku_producto
-BEFORE INSERT ON Producto
-FOR EACH ROW
-BEGIN
-    DECLARE v_cod_subcategoria INT;
-    DECLARE v_consecutivo INT;
-
-    SELECT codigo
-    INTO v_cod_subcategoria
-    FROM Subcategoria
-    WHERE idSubcategoria = NEW.idSubcategoria;
-
-    SELECT IFNULL(MAX(CAST(RIGHT(sku,3) AS UNSIGNED)),0) + 1
-    INTO v_consecutivo
-    FROM Producto
-    WHERE sku LIKE CONCAT(v_cod_subcategoria, '%'); 
-
-    SET NEW.sku = CONCAT(v_cod_subcategoria, LPAD(v_consecutivo,3,'0'));
-END$$
-
-DELIMITER ;
 
 -- ===========================================
 -- Proveedor
@@ -2855,710 +4251,31 @@ INSERT INTO Producto (codigoBarras, nombre, descripcion, idSubcategoria, idMarca
 
 
 -- ===========================================
--- PROCEDIMIENTOS PARA USUSARIO
+-- Tiendas
 -- ===========================================
-DELIMITER //
-CREATE PROCEDURE sp_ValidarLogin (
-    IN p_login VARCHAR(150),
-    IN p_contrasena VARCHAR(100)
-)
-BEGIN
-    SELECT u.idUsuario, u.usuario, u.correo, u.idEmpleado, e.nombre AS nombreEmpleado, u.idRol, r.nombre AS nombreRol
-    FROM Usuario u
-    INNER JOIN Empleado e ON u.idEmpleado = e.idEmpleado
-    INNER JOIN Rol r ON u.idRol = r.idRol
-    WHERE (u.usuario = p_login OR u.correo = p_login)
-      AND u.contrasena = SHA2(p_contrasena, 256)
-      AND u.esDesactivado = 0;
-END //
-DELIMITER ;
-
--- ===========================================
--- PROCEDIMIENTOS DE CONTEO
--- ===========================================
-
--- Total de productos activos
-DELIMITER $$
-
-CREATE PROCEDURE sp_total_productos()
-BEGIN
-    SELECT COUNT(*) AS totalStock
-    FROM Producto
-    WHERE esDesactivado = 0;
-END$$
-
-DELIMITER ;
-
--- Total de proveedores activos
-DELIMITER $$
-
-CREATE PROCEDURE sp_total_proveedores()
-BEGIN
-    SELECT COUNT(*) AS totalProv
-    FROM Proveedor
-    WHERE esDesactivado = 0;
-END$$
-
-DELIMITER ;
-
-
--- Total de usuarios activos
-DELIMITER $$
-
-CREATE PROCEDURE sp_total_usuarios()
-BEGIN
-    SELECT COUNT(*) AS totalUser
-    FROM Usuario
-    WHERE esDesactivado = 0;
-END$$
-
-DELIMITER ;
-
--- ===========================================
--- PROCEDIMIENTOS ALMACENADOS PARA PRODUCTOS
--- ===========================================
-
-DELIMITER //
-
--- Procedimiento para listar productos con paginación y búsqueda
-CREATE PROCEDURE sp_listar_productos(
-    IN p_busqueda VARCHAR(255),
-    IN p_limit INT,
-    IN p_offset INT
-)
-BEGIN
-    SELECT
-        p.*, s.nombre AS subcategoria, c.nombre AS categoria, m.nombre AS marca
-    FROM producto p
-    LEFT JOIN subcategoria s ON p.idSubcategoria = s.idSubcategoria
-    LEFT JOIN marca m ON p.idMarca = m.idMarca
-    LEFT JOIN categoria c ON s.idCategoria = c.idCategoria
-    WHERE p.esDesactivado = 0 AND (p_busqueda IS NULL OR p_busqueda = '' OR p.sku LIKE CONCAT('%', p_busqueda, '%') OR p.nombre LIKE CONCAT('%', p_busqueda, '%'))
-    ORDER BY p.idProducto
-    LIMIT p_limit OFFSET p_offset;
-END //
-
--- Procedimiento para contar productos con búsqueda
-CREATE PROCEDURE sp_contar_productos(
-    IN p_busqueda VARCHAR(255)
-)
-BEGIN
-    SELECT COUNT(*) FROM producto p
-    WHERE p.esDesactivado = 0 AND (p_busqueda IS NULL OR p_busqueda = '' OR p.sku LIKE CONCAT('%', p_busqueda, '%') OR p.nombre LIKE CONCAT('%', p_busqueda, '%'));
-END //
-
--- Procedimiento para obtener un producto por su ID
-CREATE PROCEDURE sp_obtener_producto(
-    IN p_id INT
-)
-BEGIN
-    SELECT p.*, s.nombre AS subcategoria, s.idCategoria, m.nombre AS marca
-    FROM producto p
-    JOIN subcategoria s ON p.idSubcategoria = s.idSubcategoria
-    JOIN marca m ON p.idMarca = m.idMarca
-    WHERE p.idProducto = p_id AND p.esDesactivado = 0;
-END //
-
--- Procedimiento para registrar un nuevo producto
-CREATE PROCEDURE sp_registrar_producto(
-    IN p_codigoBarras VARCHAR(50),
-    IN p_nombre VARCHAR(100),
-    IN p_descripcion TEXT,
-    IN p_idSubcategoria INT,
-    IN p_idMarca INT,
-    IN p_stockMinimo INT,
-    IN p_precioCosto DECIMAL(10, 2),
-    IN p_usuarioCreacion VARCHAR(100)
-)
-BEGIN
-    INSERT INTO producto (codigoBarras, nombre, descripcion, idSubcategoria, idMarca, stockMinimo, precioCosto, usuarioCreacion)
-    VALUES (p_codigoBarras, p_nombre, p_descripcion, p_idSubcategoria, p_idMarca, p_stockMinimo, p_precioCosto, p_usuarioCreacion);
-END //
-
--- Procedimiento para actualizar un producto existente
-CREATE PROCEDURE sp_actualizar_producto(
-    IN p_idProducto INT,
-    IN p_codigoBarras VARCHAR(50),
-    IN p_nombre VARCHAR(100),
-    IN p_descripcion TEXT,
-    IN p_idSubcategoria INT,
-    IN p_idMarca INT,
-    IN p_stockMinimo INT,
-    IN p_precioCosto DECIMAL(10, 2),
-    IN p_usuarioModificacion VARCHAR(100)
-)
-BEGIN
-    UPDATE producto SET
-        codigoBarras = p_codigoBarras,
-        nombre = p_nombre,
-        descripcion = p_descripcion,
-        idSubcategoria = p_idSubcategoria,
-        idMarca = p_idMarca,
-        stockMinimo = p_stockMinimo,
-        precioCosto = p_precioCosto,
-        usuarioModificacion = p_usuarioModificacion,
-        fechaModificacion = NOW()
-    WHERE idProducto = p_idProducto;
-END //
-
--- Procedimiento para eliminar LOGICAMENTE un producto
-DELIMITER //
-CREATE PROCEDURE sp_eliminar_producto(
-    IN p_idProducto INT,
-    IN p_usuarioModificacion VARCHAR(100)
-)
-BEGIN
-    UPDATE producto 
-    SET 
-        esDesactivado = 1,
-        fechaModificacion = NOW(),
-        usuarioModificacion = p_usuarioModificacion
-    WHERE idProducto = p_idProducto;
-END //
-DELIMITER ;
-
-
-
--- ===========================================
--- PROCEDIMIENTOS ALMACENADOS PARA CATEGORIAS
--- ===========================================
-
--- Procedimiento para registrar una nueva categoría
-DELIMITER //
-CREATE PROCEDURE sp_registrar_categoria(
-    IN p_codigo VARCHAR(20),
-    IN p_nombre VARCHAR(100),
-    IN p_usuarioCreacion VARCHAR(100)
-)
-BEGIN
-    INSERT INTO Categoria (codigo, nombre, usuarioCreacion)
-    VALUES (p_codigo, p_nombre, p_usuarioCreacion);
-END //
-DELIMITER ;
-
--- Procedimiento para actualizar una categoría existente
-DELIMITER //
-CREATE PROCEDURE sp_actualizar_categoria(
-    IN p_idCategoria INT,
-    IN p_codigo VARCHAR(20),
-    IN p_nombre VARCHAR(100),
-    IN p_usuarioModificacion VARCHAR(100)
-)
-BEGIN
-    UPDATE Categoria SET
-        codigo = p_codigo,
-        nombre = p_nombre,
-        usuarioModificacion = p_usuarioModificacion,
-        fechaModificacion = NOW()
-    WHERE idCategoria = p_idCategoria;
-END //
-DELIMITER ;
-
--- Procedimiento para eliminar (desactivar) una categoría
-DELIMITER //
-CREATE PROCEDURE sp_eliminar_categoria(
-    IN p_idCategoria INT,
-    IN p_usuarioModificacion VARCHAR(100)
-)
-BEGIN
-    UPDATE Categoria 
-    SET 
-        esDesactivado = 1,
-        fechaModificacion = NOW(),
-        usuarioModificacion = p_usuarioModificacion
-    WHERE idCategoria = p_idCategoria;
-END //
-DELIMITER ;
-
--- Procedimiento para listar categorías con paginación y búsqueda
-DELIMITER //
-CREATE PROCEDURE sp_listar_categorias_paginado(
-    IN p_busqueda VARCHAR(255),
-    IN p_limit INT,
-    IN p_offset INT
-)
-BEGIN
-    SELECT * FROM Categoria
-    WHERE esDesactivado = 0 AND (p_busqueda IS NULL OR p_busqueda = '' OR nombre LIKE CONCAT('%', p_busqueda, '%') OR codigo LIKE CONCAT('%', p_busqueda, '%'))
-    ORDER BY nombre
-    LIMIT p_limit OFFSET p_offset;
-END //
-DELIMITER ;
-
--- Procedimiento para contar categorías con búsqueda
-DELIMITER //
-CREATE PROCEDURE sp_contar_categorias(
-    IN p_busqueda VARCHAR(255)
-)
-BEGIN
-    SELECT COUNT(*) FROM Categoria WHERE esDesactivado = 0
-        AND (p_busqueda IS NULL OR p_busqueda = '' OR nombre LIKE CONCAT('%', p_busqueda, '%') OR codigo LIKE CONCAT('%', p_busqueda, '%'));
-END //
-DELIMITER ;
-
--- Procedimiento para listar categorías
-DELIMITER //
-CREATE PROCEDURE sp_listar_categorias()
-BEGIN
-    SELECT * FROM Categoria WHERE esDesactivado = 0;
-END //
-DELIMITER ;
-
--- Procedimiento para obtener una categoría por ID
-DELIMITER //
-CREATE PROCEDURE sp_obtener_categoria_por_id(IN p_idCategoria INT)
-BEGIN
-    SELECT * FROM Categoria WHERE idCategoria = p_idCategoria;
-END //
-DELIMITER ;
-
--- ===========================================
--- PROCEDIMIENTOS ALMACENADOS PARA MARCAS
--- ===========================================
-
--- Procedimiento para registrar una nueva marca
-DELIMITER //
-CREATE PROCEDURE sp_registrar_marca(
-    IN p_nombre VARCHAR(100),
-    IN p_usuarioCreacion VARCHAR(100)
-)
-BEGIN
-    INSERT INTO marca (nombre, usuarioCreacion)
-    VALUES (p_nombre, p_usuarioCreacion);
-END //
-DELIMITER ;
-
--- Procedimiento para actualizar una marca existente
-DELIMITER //
-CREATE PROCEDURE sp_actualizar_marca(
-    IN p_idMarca INT,
-    IN p_nombre VARCHAR(100),
-    IN p_usuarioModificacion VARCHAR(100)
-)
-BEGIN
-    UPDATE marca SET
-        nombre = p_nombre,
-        usuarioModificacion = p_usuarioModificacion,
-        fechaModificacion = NOW()
-    WHERE idMarca = p_idMarca;
-END //
-DELIMITER ;
-
--- Procedimiento para eliminar una marca
-DELIMITER //
-CREATE PROCEDURE sp_eliminar_marca(
-    IN p_idMarca INT,
-    IN p_usuarioModificacion VARCHAR(100)
-)
-BEGIN
-    UPDATE marca
-    SET 
-        esDesactivado = 1,
-        fechaModificacion = NOW(),
-        usuarioModificacion = p_usuarioModificacion
-    WHERE idMarca = p_idMarca;
-END //
-DELIMITER ;
-
--- Procedimiento para listar marcas con paginación y búsqueda
-DELIMITER //
-CREATE PROCEDURE sp_listar_marcas_paginado(
-    IN p_busqueda VARCHAR(255),
-    IN p_limit INT,
-    IN p_offset INT
-)
-BEGIN
-    SELECT * FROM marca
-    WHERE p_busqueda IS NULL OR p_busqueda = '' OR nombre LIKE CONCAT('%', p_busqueda, '%')
-    ORDER BY nombre
-    LIMIT p_limit OFFSET p_offset;
-END //
-DELIMITER ;
-
--- Procedimiento para contar marcas con búsqueda
-DELIMITER //
-CREATE PROCEDURE sp_contar_marcas(
-    IN p_busqueda VARCHAR(255)
-)
-BEGIN
-    SELECT COUNT(*) FROM marca
-    WHERE p_busqueda IS NULL OR p_busqueda = '' OR nombre LIKE CONCAT('%', p_busqueda, '%');
-END //
-DELIMITER ;
-
--- Procedimiento para obtener una marca por su ID
-DELIMITER //
-CREATE PROCEDURE sp_obtener_marca_por_id(
-    IN p_idMarca INT
-)
-BEGIN
-    SELECT * FROM marca WHERE idMarca = p_idMarca;
-END //
-DELIMITER ;
-
-
--- Procedimiento para listar marcas
-DELIMITER //
-CREATE PROCEDURE sp_listar_marcas()
-BEGIN
-    SELECT * FROM marca;
-END //
-DELIMITER ;
-
--- ===========================================
--- PROCEDIMIENTOS ALMACENADOS PARA SUBCATEGORÍAS
--- ===========================================
-
--- Procedimiento para registrar una nueva subcategoría
-DELIMITER //
-CREATE PROCEDURE sp_registrar_subcategoria(
-    IN p_codigo VARCHAR(50),
-    IN p_nombre VARCHAR(100),
-    IN p_idCategoria INT,
-    IN p_usuarioCreacion VARCHAR(100)
-)
-BEGIN
-    INSERT INTO subcategoria (codigo, nombre, idCategoria, usuarioCreacion)
-    VALUES (p_codigo, p_nombre, p_idCategoria, p_usuarioCreacion);
-END //
-DELIMITER ;
-
--- Procedimiento para actualizar una subcategoría existente
-DELIMITER //
-CREATE PROCEDURE sp_actualizar_subcategoria(
-    IN p_idSubcategoria INT,
-    IN p_codigo VARCHAR(50),
-    IN p_nombre VARCHAR(100),
-    IN p_idCategoria INT,
-    IN p_usuarioModificacion VARCHAR(100)
-)
-BEGIN
-    UPDATE subcategoria SET
-        codigo = p_codigo,
-        nombre = p_nombre,
-        idCategoria = p_idCategoria,
-        usuarioModificacion = p_usuarioModificacion,
-        fechaModificacion = NOW()
-    WHERE idSubcategoria = p_idSubcategoria;
-END //
-DELIMITER ;
-
--- Procedimiento para eliminar (desactivar) una subcategoría
-DELIMITER //
-CREATE PROCEDURE sp_eliminar_subcategoria(
-    IN p_idSubcategoria INT,
-    IN p_usuarioModificacion VARCHAR(100)
-)
-BEGIN
-    UPDATE subcategoria 
-    SET 
-        esDesactivado = 1,
-        fechaModificacion = NOW(),
-        usuarioModificacion = p_usuarioModificacion
-    WHERE idSubcategoria = p_idSubcategoria;
-END //
-DELIMITER ;
-
--- Procedimiento para listar subcategorías con paginación y búsqueda
-DELIMITER //
-CREATE PROCEDURE sp_listar_subcategorias_paginado(
-    IN p_busqueda VARCHAR(255),
-    IN p_limit INT,
-    IN p_offset INT
-)
-BEGIN
-    SELECT sc.*, c.nombre as categoria  FROM subcategoria sc
-    JOIN categoria c ON sc.idCategoria = c.idCategoria
-    WHERE sc.esDesactivado = 0
-      AND (p_busqueda IS NULL OR p_busqueda = '' OR sc.nombre LIKE CONCAT('%', p_busqueda, '%') OR sc.codigo LIKE CONCAT('%', p_busqueda, '%'))
-    ORDER BY sc.idSubcategoria
-    LIMIT p_limit OFFSET p_offset;
-END //
-DELIMITER ;
-
--- Procedimiento para contar subcategorías con búsqueda
-DELIMITER //
-CREATE PROCEDURE sp_contar_subcategorias(
-    IN p_busqueda VARCHAR(255)
-)
-BEGIN
-    SELECT COUNT(*) FROM subcategoria  WHERE esDesactivado = 0 
-      AND (p_busqueda IS NULL OR p_busqueda = '' OR nombre LIKE CONCAT('%', p_busqueda, '%') OR codigo LIKE CONCAT('%', p_busqueda, '%'));
-END //
-DELIMITER ;
-
--- Procedimiento para obtener una subcategoría por su ID
-DELIMITER //
-CREATE PROCEDURE sp_obtener_subcategoria_por_id(
-    IN p_id INT
-)
-BEGIN
-    SELECT sc.*, c.nombre as categoria 
-    FROM subcategoria sc 
-    JOIN categoria c ON sc.idCategoria = c.idCategoria
-    WHERE sc.idSubcategoria = p_id;
-END //
-DELIMITER ;
-
-
--- Procedimiento para listar subcategorías
-DELIMITER //
-CREATE PROCEDURE sp_listar_subcategorias()
-BEGIN
-    SELECT * FROM Subcategoria WHERE esDesactivado = 0;
-END //
-DELIMITER ;
-
--- Procedimiento para listar subcategorías por categoría
-DELIMITER //
-CREATE PROCEDURE sp_listar_subcategorias_por_categoria(IN p_idCategoria INT)
-BEGIN
-    SELECT * FROM Subcategoria WHERE idCategoria = p_idCategoria AND esDesactivado = 0;
-END //
-DELIMITER ;
-
-
--- SP para listar proveedores con búsqueda y paginación
-DELIMITER //
-CREATE PROCEDURE sp_listar_proveedores_paginado(
-    IN p_termino VARCHAR(255),
-    IN p_limit INT,
-    IN p_offset INT
-)
-BEGIN
-    SELECT idProveedor, numeroDocumento, razonSocial, nombreComercial, contacto, telefono, direccion
-    FROM Proveedor
-    WHERE esDesactivado = 0
-      AND (razonSocial LIKE CONCAT('%', p_termino, '%') OR numeroDocumento LIKE CONCAT('%', p_termino, '%'))
-    ORDER BY idProveedor DESC
-    LIMIT p_limit OFFSET p_offset;
-END //
-DELIMITER ;
-
--- SP para contar proveedores (para paginación)
-DELIMITER //
-CREATE PROCEDURE sp_contar_proveedores(
-    IN p_termino VARCHAR(255)
-)
-BEGIN
-    SELECT COUNT(*) 
-    FROM Proveedor
-    WHERE esDesactivado = 0
-      AND (razonSocial LIKE CONCAT('%', p_termino, '%') OR numeroDocumento LIKE CONCAT('%', p_termino, '%'));
-END //
-DELIMITER ;
-
--- SP para obtener un proveedor por ID
-DELIMITER //
-CREATE PROCEDURE sp_obtener_proveedor_por_id(
-    IN p_id INT
-)
-BEGIN
-    SELECT idProveedor, numeroDocumento, razonSocial, nombreComercial, contacto, telefono, direccion
-    FROM Proveedor
-    WHERE idProveedor = p_id
-      AND esDesactivado = 0;
-END //
-DELIMITER ;
-
--- SP para registrar un nuevo proveedor
-DELIMITER //
-CREATE PROCEDURE sp_registrar_proveedor(
-    IN p_numeroDocumento VARCHAR(50),
-    IN p_razonSocial VARCHAR(150),
-    IN p_nombreComercial VARCHAR(150),
-    IN p_contacto VARCHAR(100),
-    IN p_telefono VARCHAR(50),
-    IN p_direccion TEXT,
-    IN p_usuarioCreacion VARCHAR(100)
-)
-BEGIN
-    INSERT INTO Proveedor (numeroDocumento, razonSocial, nombreComercial, contacto, telefono, direccion, usuarioCreacion)
-    VALUES (p_numeroDocumento, p_razonSocial, p_nombreComercial, p_contacto, p_telefono, p_direccion, p_usuarioCreacion);
-END //
-DELIMITER ;
-
--- SP para actualizar un proveedor
-DELIMITER //
-CREATE PROCEDURE sp_actualizar_proveedor(
-    IN p_idProveedor INT,
-    IN p_numeroDocumento VARCHAR(50),
-    IN p_razonSocial VARCHAR(150),
-    IN p_nombreComercial VARCHAR(150),
-    IN p_contacto VARCHAR(100),
-    IN p_telefono VARCHAR(50),
-    IN p_direccion TEXT,
-    IN p_usuarioModificacion VARCHAR(100)
-)
-BEGIN
-    UPDATE Proveedor
-    SET numeroDocumento = p_numeroDocumento,
-        razonSocial = p_razonSocial,
-        nombreComercial = p_nombreComercial,
-        contacto = p_contacto,
-        telefono = p_telefono,
-        direccion = p_direccion,
-        usuarioModificacion = p_usuarioModificacion,
-        fechaModificacion = NOW()
-    WHERE idProveedor = p_idProveedor;
-END //
-DELIMITER ;
-
--- SP para eliminar un proveedor (solo marcamos como desactivado)
-DELIMITER //
-CREATE PROCEDURE sp_eliminar_proveedor(
-    IN p_idProveedor INT,
-    IN p_usuarioModificacion VARCHAR(100)
-)
-BEGIN
-    UPDATE Proveedor
-    SET 
-        esDesactivado = 1,
-        fechaModificacion = NOW(),
-        usuarioModificacion = p_usuarioModificacion
-    WHERE idProveedor = p_idProveedor;
-END //
-DELIMITER ;
-
--- listar usuarios con búsqueda, paginación y joins
-DELIMITER $$
-CREATE PROCEDURE sp_listarUsuarios(
-    IN pTerminoBusqueda VARCHAR(100),
-    IN pLimit INT,
-    IN pOffset INT
-)
-BEGIN
-    SELECT u.idUsuario, u.usuario, u.correo, r.nombre AS rol, e.nombre AS empleado
-    FROM Usuario u
-    LEFT JOIN Rol r ON u.idRol = r.idRol
-    LEFT JOIN Empleado e ON u.idEmpleado = e.idEmpleado
-    WHERE u.esDesactivado = 0  -- Agrega esta condición para la eliminación lógica
-      AND (u.usuario LIKE CONCAT('%', pTerminoBusqueda, '%')
-        OR u.correo LIKE CONCAT('%', pTerminoBusqueda, '%'))
-    ORDER BY u.idUsuario ASC
-    LIMIT pLimit OFFSET pOffset;
-END$$
-DELIMITER ;
-
--- contar usuarios
-DELIMITER $$
-
-CREATE PROCEDURE sp_contarUsuarios(
-    IN pTerminoBusqueda VARCHAR(100)
-)
-BEGIN
-    SELECT COUNT(*) AS total
-    FROM Usuario
-    WHERE usuario LIKE CONCAT('%', pTerminoBusqueda, '%')
-       OR correo LIKE CONCAT('%', pTerminoBusqueda, '%');
-END$$
-
-DELIMITER ;
-
--- eliminar usuario
-DELIMITER //
-
-CREATE PROCEDURE sp_eliminarUsuario(
-    IN pIdUsuario INT,
-    IN pUsuarioModificacion VARCHAR(100)
-)
-BEGIN
-    UPDATE Usuario
-    SET 
-        esDesactivado = 1,
-        fechaModificacion = NOW(),
-        usuarioModificacion = pUsuarioModificacion
-    WHERE idUsuario = pIdUsuario;
-END //
-DELIMITER ;
-
-DELIMITER //
-
-CREATE PROCEDURE sp_gestionar_stock(
-    IN p_idProducto INT,
-    IN p_cantidad INT,
-    IN p_fechaVencimiento DATE,
-    IN p_usuarioModificacion VARCHAR(100)
-)
-BEGIN
-    DECLARE v_count INT;
-    SELECT COUNT(*) INTO v_count
-    FROM Stock
-    WHERE idProducto = p_idProducto AND fechaVencimiento <=> p_fechaVencimiento;
-
-    IF v_count > 0 THEN
-        UPDATE Stock
-        SET cantidad = cantidad + p_cantidad,
-            fechaModificacion = NOW(),
-            usuarioModificacion = p_usuarioModificacion
-        WHERE idProducto = p_idProducto AND fechaVencimiento <=> p_fechaVencimiento;
-    ELSE
-        INSERT INTO Stock (
-            idProducto,
-            cantidad,
-            fechaVencimiento,
-            usuarioCreacion
-        ) VALUES (
-            p_idProducto,
-            p_cantidad,
-            p_fechaVencimiento,
-            p_usuarioModificacion
-        );
-    END IF;
-END //
-
-DELIMITER ;
-
-DELIMITER //
-
-CREATE PROCEDURE sp_obtener_reporte_stock()
-BEGIN
-    SELECT
-        p.idProducto,
-        p.nombre AS nombreProducto,
-        p.sku,
-        p.codigoBarras,
-        p.stockMinimo,
-        s.cantidad,
-        s.fechaVencimiento,
-        c.nombre AS nombreCategoria,
-        sub.nombre AS nombreSubcategoria,
-        m.nombre AS nombreMarca
-    FROM Stock s
-    INNER JOIN Producto p ON s.idProducto = p.idProducto
-    LEFT JOIN Subcategoria sub ON p.idSubcategoria = sub.idSubcategoria
-    LEFT JOIN Categoria c ON sub.idCategoria = c.idCategoria
-    LEFT JOIN Marca m ON p.idMarca = m.idMarca
-    WHERE s.esDesactivado = 0
-    ORDER BY p.nombre ASC;
-END //
-
-DELIMITER ;
-
-DELIMITER //
-
-CREATE PROCEDURE sp_obtener_productos_bajo_stock()
-BEGIN
-    SELECT
-        p.idProducto,
-        p.nombre,
-        p.sku,
-        p.stockMinimo,
-        SUM(s.cantidad) AS stockTotal
-    FROM
-        Producto p
-    INNER JOIN
-        Stock s ON p.idProducto = s.idProducto
-    WHERE
-        p.esDesactivado = 0
-    GROUP BY
-        p.idProducto, p.nombre, p.sku, p.stockMinimo
-    HAVING
-        stockTotal <= p.stockMinimo
-    ORDER BY
-        p.nombre ASC;
-END //
-
-DELIMITER ;
-
+INSERT INTO Tienda 
+    (idDistrito, nombre, direccion, telefono, esDesactivado, usuarioCreacion, fechaCreacion) 
+VALUES
+('150101', 'Tienda Central Perú', 'Av. La Marina 250, Cercado de Lima', '982534716', 0, 'system', NOW()),
+('080101', 'Sucursal Imperial', 'Calle del Sol 125, Centro Histórico', '989778987', 0, 'system', NOW()),
+('040101', 'Almacén Zona Sur', 'Parque Industrial A-1, Mz J', '955444333', 0, 'system', NOW()),
+('130101', 'Punto de Venta Trujillo', 'Jirón Pizarro 500, Centro', '934324322', 1, 'system', NOW());
+
+
+INSERT INTO TipoMovimiento (idTipoMovimiento, nombre, afectaStock, usuarioCreacion) VALUES
+(1, 'Compra/Recepción', '+1', 'Sistema'),
+(2, 'Devolución de Cliente', '+1', 'Sistema'),
+(3, 'Traslado', '-1', 'Sistema'),
+(4, 'Descarte/Merma', '-1', 'Sistema'),
+(5, 'Ajuste de Entrada', '+1', 'Sistema')
+ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
+
+
+INSERT INTO EstadoPedido (idEstado, nombreEstado, usuarioCreacion) VALUES 
+(1, 'Pendiente', 'Sistema'),
+(NULL, 'Aprobado', 'Sistema'),
+(NULL, 'En Preparacion', 'Sistema'),
+(NULL, 'Completado', 'Sistema'),
+(NULL, 'Cancelado', 'Sistema'),
+(NULL, 'Devuelto', 'Sistema');
 
