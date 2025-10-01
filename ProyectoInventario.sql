@@ -1653,35 +1653,12 @@ BEGIN
 END
 
 
-
-CREATE PROCEDURE SP_ObtenerDetallePedidoParaRecepcion(
-    IN p_idPedido INT
-)
-BEGIN
-    SELECT 
-        p.idPedido,
-        prov.razonSocial AS nombreProveedor,
-        p.fechaCreacion,
-        dp.idDetalle,
-        dp.idProducto,
-        prod.nombre AS nombreProducto,
-        dp.cantidadPedida,
-        dp.costoUnitario
-    FROM Pedido p
-    JOIN Proveedor prov ON p.idProveedor = prov.idProveedor
-    JOIN DetallePedido dp ON p.idPedido = dp.idPedido
-    JOIN Producto prod ON dp.idProducto = prod.idProducto
-    WHERE p.idPedido = p_idPedido AND p.idEstado = 1;
-END
-DELIMITER ;
-
 DELIMITER //
 
 CREATE PROCEDURE SP_ObtenerDetallesPedido(
     IN p_idPedido INT
 )
 BEGIN
-    -- 1. Obtener la información del encabezado del pedido
     SELECT 
         p.idPedido,
         p.fecha,
@@ -1695,8 +1672,6 @@ BEGIN
     JOIN Proveedor prov ON p.idProveedor = prov.idProveedor
     JOIN EstadoPedido ep ON p.idEstado = ep.idEstado
     WHERE p.idPedido = p_idPedido AND p.esDesactivado = 0;
-
-    -- 2. Obtener los detalles del pedido (productos)
     SELECT 
         dp.idDetalle,
         dp.idProducto,
@@ -1727,13 +1702,12 @@ BEGIN
         dp.idDetalle,
         dp.idProducto,
         prod.nombre AS nombreProducto,
-        dp.cantidad AS cantidadPedida,  -- Usa el alias para compatibilidad con PHP
+        dp.cantidad AS cantidadPedida,
         dp.costoUnitario 
     FROM Pedido p
     JOIN Proveedor prov ON p.idProveedor = prov.idProveedor
     JOIN DetallePedido dp ON p.idPedido = dp.idPedido
     JOIN Producto prod ON dp.idProducto = prod.idProducto
-    -- El filtro de estado es correcto según tu confirmación
     WHERE p.idPedido = p_idPedido AND p.idEstado = 1; 
 END //
 
@@ -1751,8 +1725,6 @@ CREATE PROCEDURE SP_ActualizarDetalleRecepcion(
 BEGIN
     UPDATE DetallePedido
     SET 
-        -- ATENCIÓN: Se actualiza la columna 'cantidad' con la cantidad recibida. 
-        -- Si quieres mantener la cantidad pedida, debes agregar una columna 'cantidadRecibida' a DetallePedido.
         cantidad = p_cantidadRecibida,             
         costoUnitario = p_costoUnitarioReal,      
         fechaVencimiento = p_fechaVencimiento,
@@ -1764,13 +1736,56 @@ END //
 DELIMITER ;
 
 
+DELIMITER //
+-- Lógica para Entrada de Stock (Ingreso)
+CREATE PROCEDURE SP_EntradaStock(
+    IN p_idMovimiento INT,
+    IN p_idProducto INT,
+    IN p_cantidad INT,
+    IN p_costoUnitario DECIMAL(10,2),
+    IN p_fechaVencimiento DATE,
+    IN p_usuarioCreacion VARCHAR(100)
+)
+BEGIN
+    DECLARE v_idStockNuevo INT;
+    
+    INSERT INTO Stock (idProducto, cantidad, costoUnitario, fechaVencimiento, usuarioCreacion)
+    VALUES (p_idProducto, p_cantidad, p_costoUnitario, p_fechaVencimiento, p_usuarioCreacion);
 
+    SET v_idStockNuevo = LAST_INSERT_ID();
 
-
-
-
-
-
+    CALL SP_RegistrarDetalleMovimiento(
+        p_idMovimiento, 
+        p_idProducto, 
+        p_cantidad, 
+        p_costoUnitario, 
+        v_idStockNuevo, 
+        p_usuarioCreacion
+    );
+END //
+DELIMITER ;
+DELIMITER //
+-- Consulta para Listar Todos los Movimientos (Ingresos y Salidas)
+CREATE PROCEDURE SP_ListarMovimientos()
+BEGIN
+    SELECT 
+        m.idMovimiento,
+        tm.nombre AS tipoMovimiento,
+        tm.afectaStock,
+        m.fecha,
+		m.usuarioCreacion AS usuarioRegistro,
+        m.documentoReferenciaId,
+        dm.idProducto,
+        p.nombre AS nombreProducto,
+        dm.cantidad,
+        dm.precioUnitario
+    FROM Movimiento m
+    JOIN TipoMovimiento tm ON m.idTipoMovimiento = tm.idTipoMovimiento
+    JOIN DetalleMovimiento dm ON m.idMovimiento = dm.idMovimiento
+    JOIN Producto p ON dm.idProducto = p.idProducto
+    ORDER BY m.fecha DESC, m.idMovimiento DESC;
+END //
+DELIMITER ;
 
 
 

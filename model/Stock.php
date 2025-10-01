@@ -21,9 +21,6 @@ class Stock {
         return $this->conn;
     }
 
-    // =========================================================
-    // LÓGICA DE INGRESO DE STOCK (ID 1, 2, 5)
-    // =========================================================
     public function procesarEntradaStock(
         $idTipoMovimiento, 
         $idUsuario, 
@@ -31,6 +28,10 @@ class Stock {
         $productos, 
         $usuarioCreacion
     ) {
+        if (empty($productos)) {
+            throw new Exception("La lista de productos no puede estar vacía.");
+        }
+        
         $this->conn->beginTransaction();
         
         try {
@@ -42,7 +43,7 @@ class Stock {
             );
 
             foreach ($productos as $item) {
-                $stmt = $this->conn->prepare("CALL SP_EntradaStock(?, ?, ?, ?, ?, ?, @idStock)");
+                $stmt = $this->conn->prepare("CALL SP_EntradaStock(?, ?, ?, ?, ?, ?)");
                 $stmt->execute([
                     $idMovimiento,
                     $item['id'],
@@ -52,6 +53,7 @@ class Stock {
                     $usuarioCreacion
                 ]);
                 $stmt->closeCursor();
+                do {} while ($stmt->nextRowset());
             }
 
             $this->conn->commit();
@@ -63,9 +65,6 @@ class Stock {
         }
     }
 
-    // =========================================================
-    // LÓGICA DE SALIDA DE STOCK (ID 3, 4)
-    // =========================================================
     public function procesarSalidaStock(
         $idTipoMovimiento,
         $idUsuario,
@@ -73,37 +72,38 @@ class Stock {
         $productos, 
         $usuarioCreacion
     ) {
+        if (empty($productos)) {
+            throw new Exception("La lista de productos no puede estar vacía.");
+        }
+
         $this->conn->beginTransaction();
         
         try {
-            $idMovimiento = $this->movimientoModel->registrarEncabezado(
-                $idTipoMovimiento,
-                $idUsuario,
-                $idDocumentoReferencia, 
-                $usuarioCreacion
-            );
-
+            $idMovimientoGenerado = null;
+            
             foreach ($productos as $item) {
                 $stmt = $this->conn->prepare("CALL SP_SalidaStock_PrimerVencimiento(?, ?, ?, ?, ?, ?)");
                 $stmt->execute([
                     $idTipoMovimiento,
                     $idUsuario,
-                    $idDocumentoReferencia,
+                    $idDocumentoReferencia, 
                     $item['id'],
                     $item['cantidad'],
                     $usuarioCreacion
                 ]);
                 
-                $stmt->fetch(PDO::FETCH_ASSOC); 
+                $idMovimientoGenerado = $stmt->fetchColumn(); 
+                
                 $stmt->closeCursor(); 
+                do {} while ($stmt->nextRowset());
             }
 
             $this->conn->commit();
-            return true;
+            return $idMovimientoGenerado ?? true;
             
         } catch (PDOException $e) {
             $this->conn->rollBack();
-            throw new Exception("Fallo en la transacción de Salida de Stock: " . $e->getMessage());
+            throw new Exception("Fallo en la transacción de Salida de Stock (FIFO): " . $e->getMessage());
         }
     }
 
@@ -117,21 +117,39 @@ class Stock {
             
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
             $stmt->closeCursor();
+            do {} while ($stmt->nextRowset());
             return $data;
         } catch (PDOException $e) {
             throw new Exception("Error al buscar productos con stock usando SP: " . $e->getMessage());
         }
     }
     
-
     public function obtenerProductosBajoStock() {
         try {
             $sql = "CALL sp_obtener_productos_bajo_stock()";
             $stm = $this->conn->prepare($sql);
             $stm->execute();
-            return $stm->fetchAll(PDO::FETCH_ASSOC);
+            $data = $stm->fetchAll(PDO::FETCH_ASSOC);
+            $stm->closeCursor();
+            do {} while ($stm->nextRowset());
+            return $data;
         } catch (Exception $e) {
             throw new Exception("Error al obtener productos con bajo stock: " . $e->getMessage());
+        }
+    }
+
+    public function obtenerMovimientos() {
+        try {
+            $sql = "CALL SP_ListarMovimientos()";
+            $stm = $this->conn->prepare($sql);
+            $stm->execute();
+            $movimientos = $stm->fetchAll(PDO::FETCH_ASSOC);
+            $stm->closeCursor();
+            do {} while ($stm->nextRowset());
+            return $movimientos;
+        } catch (Exception $e) {
+            error_log("Error al obtener movimientos: " . $e->getMessage());
+            return [];
         }
     }
 }

@@ -100,6 +100,9 @@ $base_url = "http://localhost/TPWEB/ProyectoInventario/";
     <div class="subtitle">Documentos de Egreso</div>
     <a href="<?= $base_url ?>index.php?c=traslado&a=form"><i class="bi bi-truck"></i> Traslado (Salida)</a>
     <a href="<?= $base_url ?>index.php?c=descarte&a=form"><i class="bi bi-trash"></i> Descarte (Merma)</a>
+
+    <div class="subtitle">Movimiento</div>
+    <a href="<?= $base_url ?>index.php?c=movimiento&a=listar"><i class="bi bi-arrow-down-up"></i> Historial de Movimientos</a>
     
     <div class="subtitle">Ajustes y Consultas</div>
     <a href="<?= $base_url ?>index.php?c=stock&a=form"><i class="bi bi-tools"></i> Ajuste Manual Stock</a>
